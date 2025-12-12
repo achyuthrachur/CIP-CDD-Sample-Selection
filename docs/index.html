@@ -11,25 +11,26 @@
   <script src="https://cdn.jsdelivr.net/npm/jstat@1.9.6/dist/jstat.min.js"></script>
   <style>
     :root {
-      --bg: #0f1115;
-      --panel: #151920;
-      --accent: #65c8ff;
-      --accent-2: #8d7bff;
-      --muted: #9aa4b5;
-      --text: #e8edf5;
-      --success: #5ce1a6;
-      --danger: #ff8c8c;
-      --border: #1f2733;
-      --pill: #1d2430;
-      --shadow: 0 20px 50px rgba(0,0,0,0.35);
+      --bg: #f6f7fb;
+      --panel: #ffffff;
+      --accent: #2f80ed;
+      --accent-2: #ec6f66;
+      --muted: #5f6c7b;
+      --text: #1f2a3d;
+      --success: #1aa36f;
+      --danger: #d64545;
+      --border: #e1e6ef;
+      --pill: #f0f3f9;
+      --shadow: 0 20px 60px rgba(31,42,61,0.12);
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
-      background: radial-gradient(circle at 20% 20%, rgba(101,200,255,0.08), transparent 25%),
-                  radial-gradient(circle at 80% 0%, rgba(141,123,255,0.12), transparent 30%),
-                  var(--bg);
+      background:
+        radial-gradient(circle at 15% 15%, rgba(47,128,237,0.08), transparent 25%),
+        radial-gradient(circle at 80% 0%, rgba(236,111,102,0.12), transparent 30%),
+        var(--bg);
       color: var(--text);
       min-height: 100vh;
     }
@@ -56,7 +57,7 @@
       grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     }
     .panel {
-      background: linear-gradient(145deg, rgba(255,255,255,0.02), rgba(255,255,255,0.0));
+      background: var(--panel);
       border: 1px solid var(--border);
       border-radius: 14px;
       padding: 20px;
@@ -69,16 +70,17 @@
     }
     .muted { color: var(--muted); }
     .dropzone {
-      border: 1px dashed #2d3645;
+      border: 1px dashed #cbd5e5;
       border-radius: 12px;
       padding: 18px;
       text-align: center;
       cursor: pointer;
       transition: border-color 0.2s, background 0.2s;
+      background: #f9fbff;
     }
     .dropzone.dragging {
       border-color: var(--accent);
-      background: rgba(101,200,255,0.05);
+      background: rgba(47,128,237,0.08);
     }
     .pill {
       display: inline-flex;
@@ -104,7 +106,7 @@
       padding: 10px 12px;
       border-radius: 10px;
       border: 1px solid var(--border);
-      background: #0f131a;
+      background: #fdfdff;
       color: var(--text);
       font-size: 14px;
     }
@@ -145,13 +147,13 @@
       padding: 11px 14px;
       font-weight: 600;
       cursor: pointer;
-      color: #0b0d11;
-      background: linear-gradient(135deg, var(--accent), #5ca8ff);
+      color: #ffffff;
+      background: linear-gradient(135deg, var(--accent), #4da1ff);
       transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.2s;
-      box-shadow: 0 10px 25px rgba(101,200,255,0.25);
+      box-shadow: 0 10px 25px rgba(47,128,237,0.25);
     }
     button.secondary {
-      background: #1b212d;
+      background: #f4f6fb;
       color: var(--text);
       box-shadow: none;
       border: 1px solid var(--border);
@@ -165,7 +167,7 @@
     .pill-success { border-color: rgba(92,225,166,0.3); color: var(--success); }
     .pill-danger { border-color: rgba(255,140,140,0.3); color: var(--danger); }
     .summary {
-      background: #0f131a;
+      background: #f7f9fc;
       border-radius: 12px;
       padding: 14px;
       border: 1px solid var(--border);
@@ -198,7 +200,7 @@
   <main>
     <header>
       <h1>CIP / CDD Sample Selection</h1>
-      <p class="muted">Client-side Excel sampling with statistical defaults (99% / 5% / 1%). Drag and drop your file—no Python required.</p>
+      <p class="muted">Client-side Excel sampling with statistical defaults (99% / 5% / 1%). Drag and drop your file to begin.</p>
     </header>
 
     <div class="grid">
