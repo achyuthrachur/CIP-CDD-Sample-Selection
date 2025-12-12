@@ -36,9 +36,9 @@
     }
     a { color: var(--accent); }
     main {
-      max-width: 1200px;
+      width: min(1400px, 100% - 40px);
       margin: 0 auto;
-      padding: 32px 20px 48px;
+      padding: 32px 10px 48px;
       display: grid;
       gap: 18px;
     }
@@ -55,6 +55,7 @@
       display: grid;
       gap: 18px;
       grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      align-items: start;
     }
     .panel {
       background: var(--panel);
@@ -171,7 +172,7 @@
       border-radius: 12px;
       padding: 14px;
       border: 1px solid var(--border);
-      max-height: 320px;
+      max-height: 360px;
       overflow: auto;
       white-space: pre-wrap;
       font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
@@ -193,6 +194,32 @@
       font-size: 12px;
       color: var(--muted);
       margin-top: 4px;
+      word-break: break-word;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      text-align: left;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    th {
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 13px;
+    }
+    td input[type="number"] {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #fdfdff;
+      color: var(--text);
+      font-size: 13px;
     }
   </style>
 </head>
@@ -282,6 +309,7 @@
           </div>
 
           <div class="buttons">
+            <button type="button" id="planBtn" disabled>Plan sample</button>
             <button type="submit" id="runBtn" disabled>Generate sample</button>
             <button type="button" class="secondary" id="resetBtn">Reset</button>
           </div>
@@ -290,7 +318,12 @@
       </section>
 
       <section class="panel">
-        <h2>3) Review & download</h2>
+        <h2>3) Plan allocation</h2>
+        <div id="planBox" class="hint">Load data and click “Plan sample” to see per-stratum counts.</div>
+      </section>
+
+      <section class="panel">
+        <h2>4) Review & download</h2>
         <div class="buttons">
           <button type="button" id="downloadCsv" disabled>Download sample CSV</button>
           <button type="button" class="secondary" id="downloadJson" disabled>Download JSON summary</button>
@@ -309,6 +342,7 @@
       summary: null,
       sheetName: null,
       fileName: null,
+      plan: null,
     };
 
     const dropzone = document.getElementById('dropzone');
@@ -321,10 +355,12 @@
     const summaryBox = document.getElementById('summaryBox');
     const sheetNameHint = document.getElementById('sheetNameHint');
 
+    const planBtn = document.getElementById('planBtn');
     const runBtn = document.getElementById('runBtn');
     const resetBtn = document.getElementById('resetBtn');
     const downloadCsvBtn = document.getElementById('downloadCsv');
     const downloadJsonBtn = document.getElementById('downloadJson');
+    const planBox = document.getElementById('planBox');
 
     function setStatus(msg, tone = 'muted') {
       statusEl.textContent = msg;
@@ -366,6 +402,7 @@
       if (!files || !files.length) return;
       const file = files[0];
       state.fileName = file.name;
+      state.plan = null;
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
@@ -383,8 +420,10 @@
           state.columns = Object.keys(json[0]);
           renderColumns();
           renderStratifyOptions();
+          renderPlan();
           setStatus(`Loaded ${json.length} rows from ${sheetName}.`, 'success');
-          runBtn.disabled = false;
+          planBtn.disabled = false;
+          runBtn.disabled = true;
           sheetNameHint.textContent = `Using first sheet: ${sheetName}`;
         } catch (err) {
           console.error(err);
@@ -577,7 +616,110 @@
       });
     }
 
-    function stratifiedSample(rows, cfg, rng, desiredSize) {
+    function configSignature(cfg) {
+      return JSON.stringify({
+        method: cfg.method,
+        confidence: cfg.confidence,
+        margin: cfg.margin,
+        expectedErrorRate: cfg.expectedErrorRate,
+        sampleSize: cfg.sampleSize,
+        samplePercentage: cfg.samplePercentage,
+        systematicStep: cfg.systematicStep,
+        stratifyFields: cfg.stratifyFields,
+      });
+    }
+
+    function computePlan(population, cfg) {
+      const desiredSize = resolveSampleSize(population.length, cfg);
+      if (desiredSize <= 0) throw new Error('Calculated sample size is 0. Adjust parameters.');
+      if (!cfg.stratifyFields.length) {
+        return {
+          allocations: [
+            {
+              key: '__all__',
+              stratum: {},
+              population_count: population.length,
+              sample_count: Math.min(population.length, desiredSize),
+            },
+          ],
+          plannedSize: Math.min(population.length, desiredSize),
+          desiredSize,
+          stratifyFields: [],
+        };
+      }
+      const groups = {};
+      for (const row of population) {
+        const key = normalizeKey(cfg.stratifyFields.map(f => row[f]));
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(row);
+      }
+      const counts = Object.fromEntries(Object.entries(groups).map(([k, arr]) => [k, arr.length]));
+      const allocationsMap = proportionalAllocation(counts, desiredSize);
+      const allocations = Object.entries(groups).map(([k, arr]) => {
+        const values = JSON.parse(k).map(v => v === MISSING_VALUE ? null : v);
+        const stratum = {};
+        cfg.stratifyFields.forEach((f, i) => stratum[f] = values[i]);
+        return {
+          key: k,
+          stratum,
+          population_count: arr.length,
+          sample_count: allocationsMap[k] || 0,
+        };
+      });
+      const plannedSize = allocations.reduce((s, a) => s + a.sample_count, 0);
+      return {
+        allocations,
+        plannedSize,
+        desiredSize,
+        stratifyFields: cfg.stratifyFields.slice(),
+        populationSize: population.length,
+        signature: configSignature(cfg),
+      };
+    }
+
+    function renderPlan() {
+      if (!state.plan) {
+        planBox.innerHTML = 'Load data and click “Plan sample” to see per-stratum counts.';
+        return;
+      }
+      const rowsHtml = state.plan.allocations.map((a, idx) => {
+        const label = Object.entries(a.stratum).map(([k, v]) => `${k}: ${v === null ? 'NULL' : v}`).join(', ') || '(all)';
+        return `
+          <tr>
+            <td>${idx + 1}</td>
+            <td>${label}</td>
+            <td>${a.population_count}</td>
+            <td><input type="number" min="0" max="${a.population_count}" value="${a.sample_count}" data-plan-key="${a.key}"></td>
+          </tr>
+        `;
+      }).join('');
+      const total = state.plan.allocations.reduce((s, a) => s + a.sample_count, 0);
+      state.plan.plannedSize = total;
+      planBox.innerHTML = `
+        <div class="badge">Planned total: ${total}</div>
+        <div class="badge">Calculated target: ${state.plan.desiredSize}</div>
+        <table>
+          <thead>
+            <tr><th>#</th><th>Stratum</th><th>Population</th><th>Sample count</th></tr>
+          </thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+        <div class="hint">Adjust sample counts per stratum if needed, then click “Generate sample”.</div>
+      `;
+      planBox.querySelectorAll('input[type="number"]').forEach(input => {
+        input.addEventListener('input', (e) => {
+          const key = e.target.getAttribute('data-plan-key');
+          const val = Math.max(0, parseInt(e.target.value || '0', 10));
+          const alloc = state.plan.allocations.find(a => a.key === key);
+          if (!alloc) return;
+          alloc.sample_count = Math.min(alloc.population_count, val);
+          renderPlan();
+        });
+      });
+      runBtn.disabled = total <= 0;
+    }
+
+    function stratifiedSample(rows, cfg, rng, desiredSize, allocationOverrides = null) {
       const fields = cfg.stratifyFields;
       const totalSize = desiredSize ?? resolveSampleSize(rows.length, cfg);
       if (totalSize <= 0) return { sample: [], allocations: [] };
@@ -589,7 +731,7 @@
         groups[key].push(row);
       }
       const counts = Object.fromEntries(Object.entries(groups).map(([k, arr]) => [k, arr.length]));
-      const allocations = proportionalAllocation(counts, totalSize);
+      const allocations = allocationOverrides || proportionalAllocation(counts, totalSize);
       const actualTotal = Object.values(allocations).reduce((s, v) => s + v, 0);
 
       const samples = [];
@@ -651,21 +793,32 @@
       };
     }
 
-    function sampleData(population, cfg) {
-      const desiredSize = resolveSampleSize(population.length, cfg);
+    function sampleData(population, cfg, plan) {
+      const desiredSize = plan ? plan.allocations.reduce((s, a) => s + a.sample_count, 0) : resolveSampleSize(population.length, cfg);
       if (desiredSize <= 0 && population.length > 0) throw new Error('Calculated sample size is 0. Adjust parameters.');
 
       const rng = rngFactory(cfg.seed ?? 42);
       let sample = [];
       let allocations = [];
       if (cfg.stratifyFields.length) {
-        ({ sample, allocations } = stratifiedSample(population, cfg, rng, desiredSize));
+        const overrideMap = plan ? Object.fromEntries(plan.allocations.map(a => [a.key, a.sample_count])) : null;
+        ({ sample, allocations } = stratifiedSample(population, cfg, rng, desiredSize, overrideMap));
       } else {
+        const take = plan ? Math.min(desiredSize, population.length) : desiredSize;
         if (cfg.method === 'systematic') {
-          sample = systematicSample(population, desiredSize, cfg.systematicRandomStart, rng);
+          sample = systematicSample(population, take, cfg.systematicRandomStart, rng);
         } else {
-          sample = randomSample(population, desiredSize, rng);
+          sample = randomSample(population, take, rng);
         }
+        allocations = plan ? [
+          {
+            stratum: {},
+            population_count: population.length,
+            sample_count: sample.length,
+            share_of_population: 1,
+            share_of_sample: 1,
+          },
+        ] : [];
       }
       const summary = buildSummary(population, sample, allocations, cfg, desiredSize);
       return { sample, summary };
@@ -744,14 +897,36 @@
       state.summary = null;
       state.sheetName = null;
       state.fileName = null;
+      state.plan = null;
       fileInput.value = '';
       renderColumns();
       renderStratifyOptions();
       renderSummary();
+      renderPlan();
+      planBtn.disabled = true;
       runBtn.disabled = true;
       sheetNameHint.textContent = '';
       setStatus('Reset. Load a new file.', 'muted');
     }
+
+    planBtn.addEventListener('click', () => {
+      if (!state.population.length) {
+        setStatus('Load an Excel file first.', 'danger');
+        return;
+      }
+      try {
+        const cfg = readConfigForm();
+        const plan = computePlan(state.population, cfg);
+        plan.populationSize = state.population.length;
+        state.plan = plan;
+        renderPlan();
+        runBtn.disabled = plan.plannedSize <= 0;
+        setStatus(`Plan ready. Planned sample size: ${plan.plannedSize}. Adjust allocations if needed, then generate.`, 'success');
+      } catch (err) {
+        console.error(err);
+        setStatus(err.message || 'Planning failed.', 'danger');
+      }
+    });
 
     document.getElementById('configForm').addEventListener('submit', (e) => {
       e.preventDefault();
@@ -761,7 +936,14 @@
       }
       try {
         const cfg = readConfigForm();
-        const { sample, summary } = sampleData(state.population, cfg);
+        const fieldsKey = JSON.stringify(cfg.stratifyFields || []);
+        if (!state.plan || state.plan.populationSize !== state.population.length || JSON.stringify(state.plan.stratifyFields || []) !== fieldsKey || state.plan.signature !== configSignature(cfg)) {
+          const plan = computePlan(state.population, cfg);
+          plan.populationSize = state.population.length;
+          state.plan = plan;
+          renderPlan();
+        }
+        const { sample, summary } = sampleData(state.population, cfg, state.plan);
         state.sample = sample;
         state.summary = summary;
         renderSummary();
@@ -799,6 +981,9 @@
 
     setupDropzone();
     renderSummary();
+    renderPlan();
+    planBtn.disabled = true;
+    runBtn.disabled = true;
     setStatus('Ready. Load an Excel file to begin.');
   </script>
 </body>
