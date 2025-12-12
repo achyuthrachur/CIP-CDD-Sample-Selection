@@ -13,7 +13,7 @@ pip install -r requirements.txt
 ```
 
 ### Zero-install HTML app
-- Open `web/index.html` in a browser (double-click locally or serve statically). Everything runs client-side—no Python needed.
+- Open `docs/index.html` in a browser (double-click locally or serve statically). Everything runs client-side—no Python needed.
 - Drag and drop an Excel file, choose methodology/stratification, click “Generate sample,” then download the sample CSV and JSON summary.
 
 ## Usage
