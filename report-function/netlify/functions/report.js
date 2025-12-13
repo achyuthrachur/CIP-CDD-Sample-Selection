@@ -2,21 +2,30 @@
 // Expects POST with JSON { password, summary }
 // Env vars: OPENAI_API_KEY, REPORT_PASSWORD
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
 export async function handler(event) {
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 200, headers: corsHeaders, body: '' };
+  }
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method not allowed' };
+    return { statusCode: 405, headers: corsHeaders, body: 'Method not allowed' };
   }
   try {
     const { password, summary } = JSON.parse(event.body || '{}');
     const requiredPassword = process.env.REPORT_PASSWORD;
     if (requiredPassword && password !== requiredPassword) {
-      return { statusCode: 401, body: 'Unauthorized' };
+      return { statusCode: 401, headers: corsHeaders, body: 'Unauthorized' };
     }
     if (!summary) {
-      return { statusCode: 400, body: 'Missing summary' };
+      return { statusCode: 400, headers: corsHeaders, body: 'Missing summary' };
     }
     if (!process.env.OPENAI_API_KEY) {
-      return { statusCode: 500, body: 'OPENAI_API_KEY not set' };
+      return { statusCode: 500, headers: corsHeaders, body: 'OPENAI_API_KEY not set' };
     }
 
     const prompt = `You are an expert internal audit / risk / CIP CDD sampling analyst.
@@ -67,13 +76,13 @@ ${JSON.stringify(summary, null, 2)}`;
 
     if (!resp.ok) {
       const text = await resp.text();
-      return { statusCode: resp.status, body: text };
+      return { statusCode: resp.status, headers: corsHeaders, body: text };
     }
     const data = await resp.json();
     const content = data.choices?.[0]?.message?.content?.trim() || '';
-    return { statusCode: 200, body: JSON.stringify({ report: content }) };
+    return { statusCode: 200, headers: corsHeaders, body: JSON.stringify({ report: content }) };
   } catch (err) {
     console.error(err);
-    return { statusCode: 500, body: err.message || 'Server error' };
+    return { statusCode: 500, headers: corsHeaders, body: err.message || 'Server error' };
   }
 }
