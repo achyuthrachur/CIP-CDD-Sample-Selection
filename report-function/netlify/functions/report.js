@@ -8,7 +8,8 @@ export async function handler(event) {
   }
   try {
     const { password, summary } = JSON.parse(event.body || '{}');
-    if (!password || password !== process.env.REPORT_PASSWORD) {
+    const requiredPassword = process.env.REPORT_PASSWORD;
+    if (requiredPassword && password !== requiredPassword) {
       return { statusCode: 401, body: 'Unauthorized' };
     }
     if (!summary) {
@@ -18,7 +19,36 @@ export async function handler(event) {
       return { statusCode: 500, body: 'OPENAI_API_KEY not set' };
     }
 
-    const prompt = `Create a concise sampling summary and rationale based on this JSON:\n${JSON.stringify(summary, null, 2)}`;
+    const prompt = `You are an expert internal audit / risk / CIP CDD sampling analyst.
+
+I will give you a JSON object that summarizes a sampling exercise. It will typically contain keys like:
+- methodology: { method, confidence, margin, expected_error_rate, planned_sample_size, seed, systematic_random_start, ... }
+- stratify_fields: e.g. ["Jurisdiction"]
+- source: { file_name, sheet_name }
+- population: { size, distribution: [{ stratum: {...}, count, share }, ...] }
+- sample: { size, distribution: [{ stratum: {...}, count, share }, ...] }
+- allocations: [{ stratum: {...}, population_count, sample_count, share_of_population, share_of_sample }, ...]
+- sample_ids: [list of sampled record IDs]
+
+Your task is to write a clear, professional narrative report in markdown, suitable for inclusion in an internal audit or risk working paper.
+
+Requirements for the report structure (use these exact headings):
+1. Objective and context
+2. Source data and population summary (include a markdown table of population distribution)
+3. Sampling methodology (confidence %, margin %, expected error %, planned sample size, seed/systematic start)
+4. Sampling rationale (why the method/parameters/stratification are appropriate)
+5. Sample summary (actual sample size and a markdown table of sample vs population shares)
+6. Allocation analysis and representativeness
+7. Limitations and considerations
+8. Conclusion
+
+Style:
+- Clear, professional audit language.
+- Use only numbers present in the JSON (convert proportions to % where helpful).
+- Do NOT include the raw JSON in the report; treat it as back-end data only.
+
+JSON data:
+${JSON.stringify(summary, null, 2)}`;
     const resp = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {

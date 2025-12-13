@@ -347,13 +347,11 @@
           <button type="button" class="secondary" id="downloadJson" disabled>Download JSON summary</button>
         </div>
         <div style="margin-top:10px;">
-          <label for="reportPassword">Report password (to unlock summary generation)</label>
-          <input type="password" id="reportPassword" placeholder="Enter password" autocomplete="off" />
           <div class="buttons" style="margin-top:8px;">
             <button type="button" id="genReport" class="secondary" disabled>Generate summary report</button>
             <button type="button" id="downloadReport" disabled>Download summary report</button>
           </div>
-          <div class="hint" id="reportStatus">Enter the password and generate after sampling.</div>
+          <div class="hint" id="reportStatus">Generate after sampling.</div>
         </div>
         <div class="summary" id="summaryBox">Load data and run sampling to see results.</div>
       </section>
@@ -372,8 +370,8 @@
       plan: null,
       report: '',
     };
-    // Serverless report endpoint (Netlify/Vercel/etc.). Replace with your deployed URL.
-    const REPORT_FUNCTION_URL = 'https://<your-site>.netlify.app/.netlify/functions/report';
+    // Serverless report endpoint (Netlify). Replace with your deployed URL.
+    const REPORT_FUNCTION_URL = 'https://693cd27f5344dd3c663699a5--frolicking-dusk-5c6419.netlify.app/.netlify/functions/report';
 
     const dropzone = document.getElementById('dropzone');
     const fileInput = document.getElementById('fileInput');
@@ -389,10 +387,8 @@
     const genReportBtn = document.getElementById('genReport');
     const downloadReportBtn = document.getElementById('downloadReport');
     const reportStatusEl = document.getElementById('reportStatus');
-    const openaiKeyInput = document.getElementById('openaiKey');
     const genReportBtn = document.getElementById('genReport');
     const downloadReportBtn = document.getElementById('downloadReport');
-    const reportStatusEl = document.getElementById('reportStatus');
 
     const planBtn = document.getElementById('planBtn');
     const runBtn = document.getElementById('runBtn');
@@ -908,7 +904,7 @@
         genReportBtn.disabled = true;
         downloadReportBtn.disabled = true;
         state.report = '';
-        setReportStatus('Enter the password and generate after sampling.');
+        setReportStatus('Generate after sampling.');
         return;
       }
       const s = state.summary;
@@ -1055,14 +1051,13 @@
 
     async function generateReport(summary) {
       if (!summary) throw new Error('Run sampling first.');
-      const password = reportPasswordInput.value.trim();
       if (!REPORT_FUNCTION_URL || REPORT_FUNCTION_URL.includes('<your-site>')) {
         throw new Error('Report endpoint not configured.');
       }
       const resp = await fetch(REPORT_FUNCTION_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password, summary }),
+        body: JSON.stringify({ summary }),
       });
       if (!resp.ok) {
         const text = await resp.text();
