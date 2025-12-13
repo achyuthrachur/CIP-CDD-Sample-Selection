@@ -36,11 +36,11 @@
     }
     a { color: var(--accent); }
     main {
-      width: min(1600px, 100% - 32px);
+      width: min(1800px, 100% - 12px);
       margin: 0 auto;
-      padding: 24px 12px 32px;
+      padding: 16px 12px 24px;
       display: grid;
-      gap: 12px;
+      gap: 10px;
     }
     header h1 {
       margin: 0 0 4px 0;
@@ -61,7 +61,7 @@
       background: var(--panel);
       border: 1px solid var(--border);
       border-radius: 14px;
-      padding: 18px;
+      padding: 16px;
       box-shadow: var(--shadow);
       overflow: hidden;
       height: 100%;
@@ -177,7 +177,8 @@
       border-radius: 12px;
       padding: 14px;
       border: 1px solid var(--border);
-      max-height: 360px;
+      max-height: none;
+      min-height: 140px;
       overflow: auto;
       white-space: pre-wrap;
       font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
