@@ -495,13 +495,13 @@
       fileInput.addEventListener('change', e => handleFiles(e.target.files));
       demoBtn.addEventListener('click', async () => {
         try {
-          const demoPath = './synthetic_kyc_data.xlsx?ts=' + Date.now(); // cache-buster
+          const demoPath = './synthetic_onboarding_data.xlsx?ts=' + Date.now(); // cache-buster
           const resp = await fetch(demoPath);
           if (!resp.ok) throw new Error('Demo file not found');
           const buf = await resp.arrayBuffer();
-          state.fileName = 'synthetic_kyc_data.xlsx';
+          state.fileName = 'synthetic_onboarding_data.xlsx';
           state.plan = null;
-          processWorkbook(new Uint8Array(buf), 'Demo file (synthetic_kyc_data.xlsx)');
+          processWorkbook(new Uint8Array(buf), 'Demo file (synthetic_onboarding_data.xlsx)');
         } catch (err) {
           console.error(err);
           setStatus('Failed to load demo data.', 'danger');
