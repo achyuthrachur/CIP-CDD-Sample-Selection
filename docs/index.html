@@ -54,15 +54,16 @@
     .grid {
       display: grid;
       gap: 18px;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
       align-items: start;
     }
     .panel {
       background: var(--panel);
       border: 1px solid var(--border);
       border-radius: 14px;
-      padding: 20px;
+      padding: 18px;
       box-shadow: var(--shadow);
+      overflow: hidden;
     }
     .panel h2 {
       margin: 0 0 10px 0;
@@ -202,7 +203,7 @@
       width: 100%;
       border-collapse: collapse;
       margin-top: 10px;
-      min-width: 520px;
+      min-width: 480px;
     }
     th, td {
       text-align: left;
@@ -227,6 +228,11 @@
     }
     .plan-scroll {
       overflow-x: auto;
+      max-width: 100%;
+      padding-bottom: 6px;
+      margin-right: -6px;
+      display: block;
+      -webkit-overflow-scrolling: touch;
     }
   </style>
 </head>
