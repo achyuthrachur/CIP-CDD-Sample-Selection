@@ -197,6 +197,25 @@
       margin: 0 8px 10px 0;
       box-shadow: 0 2px 6px rgba(31,42,61,0.08);
     }
+    .progress {
+      width: 100%;
+      height: 6px;
+      background: #eef2f8;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 30%;
+      background: linear-gradient(90deg, var(--accent), #4da1ff);
+      animation: progress-slide 1.2s ease-in-out infinite;
+    }
+    @keyframes progress-slide {
+      0% { transform: translateX(-100%); }
+      50% { transform: translateX(50%); }
+      100% { transform: translateX(200%); }
+    }
     .hint {
       font-size: 12px;
       color: var(--muted);
@@ -352,6 +371,7 @@
             <button type="button" id="downloadReport" disabled>Download summary report</button>
           </div>
           <div class="hint" id="reportStatus">Generate after sampling.</div>
+          <div class="progress" id="reportProgress" style="display:none;"><div class="progress-bar"></div></div>
         </div>
         <div class="summary" id="summaryBox">Load data and run sampling to see results.</div>
       </section>
@@ -386,6 +406,7 @@
     const genReportBtn = document.getElementById('genReport');
     const downloadReportBtn = document.getElementById('downloadReport');
     const reportStatusEl = document.getElementById('reportStatus');
+    const reportProgress = document.getElementById('reportProgress');
 
     const planBtn = document.getElementById('planBtn');
     const runBtn = document.getElementById('runBtn');
@@ -402,6 +423,9 @@
     function setReportStatus(msg, tone = 'muted') {
       reportStatusEl.textContent = msg;
       reportStatusEl.style.color = tone === 'danger' ? 'var(--danger)' : tone === 'success' ? 'var(--success)' : 'var(--muted)';
+    }
+    function showReportProgress(show) {
+      reportProgress.style.display = show ? 'block' : 'none';
     }
 
     function normalizeValue(value) {
@@ -902,6 +926,7 @@
         downloadReportBtn.disabled = true;
         state.report = '';
         setReportStatus('Generate after sampling.');
+        showReportProgress(false);
         return;
       }
       const s = state.summary;
@@ -972,6 +997,7 @@
       genReportBtn.disabled = true;
       downloadReportBtn.disabled = true;
       setReportStatus('Generate after sampling.');
+      showReportProgress(false);
       sheetNameHint.textContent = '';
       setStatus('Reset. Load a new file.', 'muted');
     }
@@ -1073,6 +1099,7 @@
       }
       try {
         setReportStatus('Generating report...', 'muted');
+        showReportProgress(true);
         genReportBtn.disabled = true;
         const text = await generateReport(state.summary);
         state.report = text;
@@ -1083,6 +1110,7 @@
         setReportStatus(err.message || 'Failed to generate report.', 'danger');
       } finally {
         genReportBtn.disabled = false;
+        showReportProgress(false);
       }
     });
 
