@@ -441,7 +441,8 @@
       setStatus(`Loaded ${json.length} rows from ${sheetName}.`, 'success');
       planBtn.disabled = false;
       runBtn.disabled = true;
-      sheetNameHint.textContent = `Using first sheet: ${sheetName}${fileNameLabel ? ` (${fileNameLabel})` : ''}`;
+      const labelText = fileNameLabel ? ` (${fileNameLabel})` : '';
+      sheetNameHint.textContent = `Using first sheet: ${sheetName}${labelText}`;
     }
 
     function setupDropzone() {
@@ -464,7 +465,8 @@
       fileInput.addEventListener('change', e => handleFiles(e.target.files));
       demoBtn.addEventListener('click', async () => {
         try {
-          const resp = await fetch('synthetic_kyc_data.xlsx');
+          const demoPath = 'synthetic_kyc_data.xlsx?v=2'; // cache-buster to avoid stale demo
+          const resp = await fetch(demoPath);
           if (!resp.ok) throw new Error('Demo file not found');
           const buf = await resp.arrayBuffer();
           state.fileName = 'synthetic_kyc_data.xlsx';
