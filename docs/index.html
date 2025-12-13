@@ -141,6 +141,7 @@
       gap: 10px;
       flex-wrap: wrap;
       margin-top: 14px;
+      align-items: center;
     }
     button {
       border: none;
@@ -182,13 +183,14 @@
     .badge {
       display: inline-flex;
       align-items: center;
-      padding: 6px 10px;
+      padding: 7px 12px;
       border-radius: 10px;
-      background: #1b212d;
+      background: #eef2f8;
       border: 1px solid var(--border);
-      color: var(--muted);
+      color: #4a586d;
       font-size: 12px;
-      margin-right: 8px;
+      margin: 0 8px 10px 0;
+      box-shadow: 0 2px 6px rgba(31,42,61,0.08);
     }
     .hint {
       font-size: 12px;
@@ -206,6 +208,7 @@
       padding: 8px 10px;
       border-bottom: 1px solid var(--border);
       vertical-align: middle;
+      white-space: nowrap;
     }
     th {
       color: var(--muted);
@@ -239,6 +242,9 @@
           <div class="hint" id="sheetNameHint"></div>
         </div>
         <input id="fileInput" type="file" accept=".xlsx,.xls,.xlsm,.xlsb" style="display:none" />
+        <div class="buttons" style="margin-top:10px;">
+          <button type="button" id="demoBtn" class="secondary">Load demo data</button>
+        </div>
         <div id="columns" style="margin-top:12px;"></div>
         <div id="populationMeta" class="hint"></div>
       </section>
@@ -347,6 +353,7 @@
 
     const dropzone = document.getElementById('dropzone');
     const fileInput = document.getElementById('fileInput');
+    const demoBtn = document.getElementById('demoBtn');
     const columnsEl = document.getElementById('columns');
     const stratifyOptionsEl = document.getElementById('stratifyOptions');
     const idColumnEl = document.getElementById('idColumn');
@@ -407,30 +414,34 @@
       reader.onload = (e) => {
         try {
           const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const sheetName = workbook.SheetNames[0];
-          state.sheetName = sheetName;
-          const ws = workbook.Sheets[sheetName];
-          const json = XLSX.utils.sheet_to_json(ws, { defval: null });
-          if (!json.length) {
-            setStatus('Sheet is empty.', 'danger');
-            return;
-          }
-          state.population = json;
-          state.columns = Object.keys(json[0]);
-          renderColumns();
-          renderStratifyOptions();
-          renderPlan();
-          setStatus(`Loaded ${json.length} rows from ${sheetName}.`, 'success');
-          planBtn.disabled = false;
-          runBtn.disabled = true;
-          sheetNameHint.textContent = `Using first sheet: ${sheetName}`;
+          processWorkbook(data, file.name);
         } catch (err) {
           console.error(err);
           setStatus('Failed to read Excel file. Ensure it has a header row.', 'danger');
         }
       };
       reader.readAsArrayBuffer(file);
+    }
+
+    function processWorkbook(uint8array, fileNameLabel = 'Loaded file') {
+      const workbook = XLSX.read(uint8array, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      state.sheetName = sheetName;
+      const ws = workbook.Sheets[sheetName];
+      const json = XLSX.utils.sheet_to_json(ws, { defval: null });
+      if (!json.length) {
+        setStatus('Sheet is empty.', 'danger');
+        return;
+      }
+      state.population = json;
+      state.columns = Object.keys(json[0]);
+      renderColumns();
+      renderStratifyOptions();
+      renderPlan();
+      setStatus(`Loaded ${json.length} rows from ${sheetName}.`, 'success');
+      planBtn.disabled = false;
+      runBtn.disabled = true;
+      sheetNameHint.textContent = `Using first sheet: ${sheetName}${fileNameLabel ? ` (${fileNameLabel})` : ''}`;
     }
 
     function setupDropzone() {
@@ -451,6 +462,19 @@
       dropzone.addEventListener('drop', e => handleFiles(e.dataTransfer.files));
       dropzone.addEventListener('click', () => fileInput.click());
       fileInput.addEventListener('change', e => handleFiles(e.target.files));
+      demoBtn.addEventListener('click', async () => {
+        try {
+          const resp = await fetch('demo.xlsx');
+          if (!resp.ok) throw new Error('Demo file not found');
+          const buf = await resp.arrayBuffer();
+          state.fileName = 'demo.xlsx';
+          state.plan = null;
+          processWorkbook(new Uint8Array(buf), 'Demo file');
+        } catch (err) {
+          console.error(err);
+          setStatus('Failed to load demo data.', 'danger');
+        }
+      });
     }
 
     function rngFactory(seed = 42) {
@@ -958,7 +982,7 @@
 
     downloadCsvBtn.addEventListener('click', () => {
       if (!state.sample.length) return;
-      const csv = toCsv(state.sample, state.columns);
+      const csv = '\ufeff' + toCsv(state.sample, state.columns); // BOM to help Excel detect UTF-8
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
