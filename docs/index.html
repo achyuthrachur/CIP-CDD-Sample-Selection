@@ -36,11 +36,11 @@
     }
     a { color: var(--accent); }
     main {
-      width: min(1400px, 100% - 40px);
+      width: min(1600px, 100% - 32px);
       margin: 0 auto;
-      padding: 32px 10px 48px;
+      padding: 24px 12px 32px;
       display: grid;
-      gap: 18px;
+      gap: 12px;
     }
     header h1 {
       margin: 0 0 4px 0;
@@ -53,8 +53,8 @@
     }
     .grid {
       display: grid;
-      gap: 18px;
-      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 12px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       align-items: start;
     }
     .panel {
@@ -64,6 +64,9 @@
       padding: 18px;
       box-shadow: var(--shadow);
       overflow: hidden;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
     }
     .panel h2 {
       margin: 0 0 10px 0;
@@ -203,7 +206,7 @@
       width: 100%;
       border-collapse: collapse;
       margin-top: 10px;
-      min-width: 480px;
+      min-width: 0;
     }
     th, td {
       text-align: left;
@@ -227,12 +230,10 @@
       font-size: 13px;
     }
     .plan-scroll {
-      overflow-x: auto;
+      overflow: visible;
       max-width: 100%;
       padding-bottom: 6px;
-      margin-right: -6px;
       display: block;
-      -webkit-overflow-scrolling: touch;
     }
   </style>
 </head>
