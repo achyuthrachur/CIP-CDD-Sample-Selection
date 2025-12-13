@@ -346,6 +346,15 @@
           <button type="button" id="downloadCsv" disabled>Download sample CSV</button>
           <button type="button" class="secondary" id="downloadJson" disabled>Download JSON summary</button>
         </div>
+        <div style="margin-top:10px;">
+          <label for="reportPassword">Report password (to unlock summary generation)</label>
+          <input type="password" id="reportPassword" placeholder="Enter password" autocomplete="off" />
+          <div class="buttons" style="margin-top:8px;">
+            <button type="button" id="genReport" class="secondary" disabled>Generate summary report</button>
+            <button type="button" id="downloadReport" disabled>Download summary report</button>
+          </div>
+          <div class="hint" id="reportStatus">Enter the password and generate after sampling.</div>
+        </div>
         <div class="summary" id="summaryBox">Load data and run sampling to see results.</div>
       </section>
     </div>
@@ -361,7 +370,10 @@
       sheetName: null,
       fileName: null,
       plan: null,
+      report: '',
     };
+    // Serverless report endpoint (Netlify/Vercel/etc.). Replace with your deployed URL.
+    const REPORT_FUNCTION_URL = 'https://<your-site>.netlify.app/.netlify/functions/report';
 
     const dropzone = document.getElementById('dropzone');
     const fileInput = document.getElementById('fileInput');
@@ -373,6 +385,14 @@
     const statusEl = document.getElementById('status');
     const summaryBox = document.getElementById('summaryBox');
     const sheetNameHint = document.getElementById('sheetNameHint');
+    const reportPasswordInput = document.getElementById('reportPassword');
+    const genReportBtn = document.getElementById('genReport');
+    const downloadReportBtn = document.getElementById('downloadReport');
+    const reportStatusEl = document.getElementById('reportStatus');
+    const openaiKeyInput = document.getElementById('openaiKey');
+    const genReportBtn = document.getElementById('genReport');
+    const downloadReportBtn = document.getElementById('downloadReport');
+    const reportStatusEl = document.getElementById('reportStatus');
 
     const planBtn = document.getElementById('planBtn');
     const runBtn = document.getElementById('runBtn');
@@ -384,6 +404,11 @@
     function setStatus(msg, tone = 'muted') {
       statusEl.textContent = msg;
       statusEl.style.color = tone === 'danger' ? 'var(--danger)' : tone === 'success' ? 'var(--success)' : 'var(--muted)';
+    }
+
+    function setReportStatus(msg, tone = 'muted') {
+      reportStatusEl.textContent = msg;
+      reportStatusEl.style.color = tone === 'danger' ? 'var(--danger)' : tone === 'success' ? 'var(--success)' : 'var(--muted)';
     }
 
     function normalizeValue(value) {
@@ -880,6 +905,10 @@
         summaryBox.textContent = 'Load data and run sampling to see results.';
         downloadCsvBtn.disabled = true;
         downloadJsonBtn.disabled = true;
+        genReportBtn.disabled = true;
+        downloadReportBtn.disabled = true;
+        state.report = '';
+        setReportStatus('Enter the password and generate after sampling.');
         return;
       }
       const s = state.summary;
@@ -899,6 +928,7 @@
       summaryBox.textContent = lines.join('\n');
       downloadCsvBtn.disabled = false;
       downloadJsonBtn.disabled = false;
+       genReportBtn.disabled = false;
     }
 
     function readConfigForm() {
@@ -938,6 +968,7 @@
       state.sheetName = null;
       state.fileName = null;
       state.plan = null;
+      state.report = '';
       fileInput.value = '';
       renderColumns();
       renderStratifyOptions();
@@ -945,6 +976,9 @@
       renderPlan();
       planBtn.disabled = true;
       runBtn.disabled = true;
+      genReportBtn.disabled = true;
+      downloadReportBtn.disabled = true;
+      setReportStatus('Enter a key and generate after sampling.');
       sheetNameHint.textContent = '';
       setStatus('Reset. Load a new file.', 'muted');
     }
@@ -1015,6 +1049,58 @@
       const a = document.createElement('a');
       a.href = url;
       a.download = 'sampling_summary.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    async function generateReport(summary) {
+      if (!summary) throw new Error('Run sampling first.');
+      const password = reportPasswordInput.value.trim();
+      if (!REPORT_FUNCTION_URL || REPORT_FUNCTION_URL.includes('<your-site>')) {
+        throw new Error('Report endpoint not configured.');
+      }
+      const resp = await fetch(REPORT_FUNCTION_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password, summary }),
+      });
+      if (!resp.ok) {
+        const text = await resp.text();
+        throw new Error(`Report API error: ${resp.status} ${text}`);
+      }
+      const data = await resp.json();
+      const content = data.report?.trim();
+      if (!content) throw new Error('No content returned from report API.');
+      return content;
+    }
+
+    genReportBtn.addEventListener('click', async () => {
+      if (!state.summary) {
+        setReportStatus('Run sampling first.', 'danger');
+        return;
+      }
+      try {
+        setReportStatus('Generating report...', 'muted');
+        genReportBtn.disabled = true;
+        const text = await generateReport(state.summary);
+        state.report = text;
+        downloadReportBtn.disabled = !text;
+        setReportStatus('Report ready. Click download.', 'success');
+      } catch (err) {
+        console.error(err);
+        setReportStatus(err.message || 'Failed to generate report.', 'danger');
+      } finally {
+        genReportBtn.disabled = false;
+      }
+    });
+
+    downloadReportBtn.addEventListener('click', () => {
+      if (!state.report) return;
+      const blob = new Blob([state.report], { type: 'text/plain;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'sampling_summary.txt';
       a.click();
       URL.revokeObjectURL(url);
     });
