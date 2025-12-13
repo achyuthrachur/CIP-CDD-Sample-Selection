@@ -383,7 +383,6 @@
     const statusEl = document.getElementById('status');
     const summaryBox = document.getElementById('summaryBox');
     const sheetNameHint = document.getElementById('sheetNameHint');
-    const reportPasswordInput = document.getElementById('reportPassword');
     const genReportBtn = document.getElementById('genReport');
     const downloadReportBtn = document.getElementById('downloadReport');
     const reportStatusEl = document.getElementById('reportStatus');
@@ -498,7 +497,7 @@
       fileInput.addEventListener('change', e => handleFiles(e.target.files));
       demoBtn.addEventListener('click', async () => {
         try {
-          const demoPath = 'synthetic_kyc_data.xlsx?v=2'; // cache-buster to avoid stale demo
+          const demoPath = './synthetic_kyc_data.xlsx?ts=' + Date.now(); // cache-buster
           const resp = await fetch(demoPath);
           if (!resp.ok) throw new Error('Demo file not found');
           const buf = await resp.arrayBuffer();
@@ -974,7 +973,7 @@
       runBtn.disabled = true;
       genReportBtn.disabled = true;
       downloadReportBtn.disabled = true;
-      setReportStatus('Enter a key and generate after sampling.');
+      setReportStatus('Generate after sampling.');
       sheetNameHint.textContent = '';
       setStatus('Reset. Load a new file.', 'muted');
     }
