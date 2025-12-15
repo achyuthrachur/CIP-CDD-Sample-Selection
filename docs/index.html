@@ -621,6 +621,20 @@
 
   <script>
     const MISSING_VALUE = "<MISSING>";
+    const DEMO_INLINE = [
+      { Customer: "Acme Corp", Region: "NA", RiskBand: "Low", Segment: "SMB", Balance: 120000, TenureMonths: 18 },
+      { Customer: "Beta LLC", Region: "NA", RiskBand: "Medium", Segment: "SMB", Balance: 95000, TenureMonths: 10 },
+      { Customer: "Cobalt Inc", Region: "EMEA", RiskBand: "High", Segment: "Enterprise", Balance: 450000, TenureMonths: 42 },
+      { Customer: "Delta Co", Region: "APAC", RiskBand: "Low", Segment: "Mid", Balance: 210000, TenureMonths: 24 },
+      { Customer: "Echo Ltd", Region: "APAC", RiskBand: "Medium", Segment: "Mid", Balance: 175000, TenureMonths: 16 },
+      { Customer: "Foxtrot AG", Region: "EMEA", RiskBand: "Low", Segment: "Mid", Balance: 99000, TenureMonths: 8 },
+      { Customer: "Garnet BV", Region: "EMEA", RiskBand: "Medium", Segment: "SMB", Balance: 64000, TenureMonths: 12 },
+      { Customer: "Helix SA", Region: "LATAM", RiskBand: "High", Segment: "Mid", Balance: 305000, TenureMonths: 30 },
+      { Customer: "Iota PLC", Region: "LATAM", RiskBand: "Low", Segment: "SMB", Balance: 58000, TenureMonths: 6 },
+      { Customer: "Juno Pty", Region: "NA", RiskBand: "High", Segment: "Enterprise", Balance: 520000, TenureMonths: 50 },
+      { Customer: "Kilo GmbH", Region: "EMEA", RiskBand: "Medium", Segment: "Enterprise", Balance: 260000, TenureMonths: 28 },
+      { Customer: "Lumen SAS", Region: "APAC", RiskBand: "Low", Segment: "SMB", Balance: 73000, TenureMonths: 14 },
+    ];
     const state = {
       population: [],
       columns: [],
@@ -729,6 +743,36 @@
     function addRecentUpload(entry) {
       state.recentUploads = [entry, ...state.recentUploads.filter(r => r.name !== entry.name)].slice(0, 3);
       renderRecentUploads();
+    }
+
+    function loadInlineDemo(label = 'Demo (inline)') {
+      state.fileName = label;
+      state.sheetName = 'Demo';
+      state.population = DEMO_INLINE;
+      state.columns = Object.keys(DEMO_INLINE[0]);
+      state.sample = [];
+      state.summary = null;
+      state.plan = null;
+      state.stratifySelected = [];
+      state.fileMeta = { name: label, size: DEMO_INLINE.length, lastModified: null };
+      addRecentUpload({
+        name: label,
+        sheetName: 'Demo',
+        population: state.population,
+        columns: state.columns,
+        size: DEMO_INLINE.length,
+        lastModified: null,
+      });
+      renderColumns();
+      renderStratifyOptions();
+      renderPlan();
+      renderSummary();
+      renderStats();
+      renderFileMeta();
+      planBtn.disabled = false;
+      runBtn.disabled = true;
+      sheetNameHint.textContent = `Using sheet: Demo (${label})`;
+      setStatus(`Loaded inline demo (${state.population.length} rows).`, 'success');
     }
 
     function renderRecentUploads() {
@@ -918,7 +962,12 @@
       demoBtn.addEventListener('click', async () => {
         try {
           const demoPath = './synthetic_onboarding_data.xlsx?ts=' + Date.now(); // cache-buster
-          const resp = await fetch(demoPath);
+          // In file:// contexts, fetch may be blocked; fall back to inline demo.
+          if (window.location.protocol === 'file:') {
+            loadInlineDemo('Demo (inline)');
+            return;
+          }
+          const resp = await fetch(demoPath, { cache: 'no-store' });
           if (!resp.ok) throw new Error('Demo file not found');
           const buf = await resp.arrayBuffer();
           state.fileName = 'synthetic_onboarding_data.xlsx';
@@ -927,7 +976,8 @@
           processWorkbook(new Uint8Array(buf), 'Demo file (synthetic_onboarding_data.xlsx)', state.fileMeta);
         } catch (err) {
           console.error(err);
-          setStatus('Failed to load demo data.', 'danger');
+          setStatus('Failed to load demo file; using inline demo instead.', 'danger');
+          loadInlineDemo('Demo (inline fallback)');
         }
       });
     }
