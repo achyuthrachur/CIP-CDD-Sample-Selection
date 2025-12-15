@@ -67,7 +67,7 @@
     .grid {
       display: grid;
       gap: 12px;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
       align-items: start;
     }
     .panel {
@@ -77,7 +77,7 @@
       padding: 18px;
       box-shadow: var(--shadow);
       overflow: hidden;
-      height: 100%;
+      height: auto;
       display: flex;
       flex-direction: column;
       position: relative;
@@ -438,7 +438,7 @@
     .stats-grid {
       display: grid;
       gap: 12px;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     }
     .stats-card {
       background: #fff;
@@ -459,7 +459,8 @@
       font-weight: 700;
     }
     .table-wrap {
-      overflow: auto;
+      overflow: visible;
+      width: 100%;
     }
     .strata-card {
       margin-top: 10px;
@@ -471,6 +472,14 @@
       left: 0;
       background: #f7f9ff;
       z-index: 1;
+    }
+    .strata-table {
+      table-layout: fixed;
+      width: 100%;
+    }
+    .strata-table th,
+    .strata-table td {
+      white-space: nowrap;
     }
     .stat-row {
       display: flex;
