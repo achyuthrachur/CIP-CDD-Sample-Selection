@@ -960,23 +960,20 @@
       });
       fileInput.addEventListener('change', e => handleFiles(e.target.files));
       demoBtn.addEventListener('click', async () => {
+        setStatus('Loading demo data...', 'muted');
         try {
-          const demoPath = './synthetic_onboarding_data.xlsx?ts=' + Date.now(); // cache-buster
-          // In file:// contexts, fetch may be blocked; fall back to inline demo.
-          if (window.location.protocol === 'file:') {
-            loadInlineDemo('Demo (inline)');
-            return;
-          }
+          const demoPath = new URL('./synthetic_onboarding_data.xlsx', window.location.href).toString() + '?ts=' + Date.now();
           const resp = await fetch(demoPath, { cache: 'no-store' });
-          if (!resp.ok) throw new Error('Demo file not found');
+          if (!resp.ok) throw new Error(`Demo file not found (${resp.status})`);
           const buf = await resp.arrayBuffer();
           state.fileName = 'synthetic_onboarding_data.xlsx';
           state.plan = null;
           state.fileMeta = { name: 'synthetic_onboarding_data.xlsx', size: buf.byteLength, lastModified: null };
           processWorkbook(new Uint8Array(buf), 'Demo file (synthetic_onboarding_data.xlsx)', state.fileMeta);
+          setStatus('Demo data loaded.', 'success');
         } catch (err) {
           console.error(err);
-          setStatus('Failed to load demo file; using inline demo instead.', 'danger');
+          setStatus('Could not load demo file; using inline demo.', 'danger');
           loadInlineDemo('Demo (inline fallback)');
         }
       });
