@@ -919,8 +919,8 @@
         sheetName: state.sheetName,
         population: state.population,
         columns: state.columns,
-        size: meta".size,
-        lastModified: meta".lastModified,
+        size: meta ? meta.size : null,
+        lastModified: meta ? meta.lastModified : null,
       });
       renderColumns();
       renderStratifyOptions();
@@ -1644,7 +1644,7 @@
         throw new Error(`Report API error: ${resp.status} ${text}`);
       }
       const data = await resp.json();
-      const content = data.report".trim();
+      const content = (data.report || '').trim();
       if (!content) throw new Error('No content returned from report API.');
       return content;
     }
