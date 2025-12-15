@@ -67,8 +67,25 @@
     .grid {
       display: grid;
       gap: 12px;
-      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      grid-template-columns: minmax(440px, 2fr) minmax(320px, 1fr);
+      grid-template-areas:
+        "main side"
+        "twin1 twin2";
       align-items: start;
+    }
+    .grid-main { grid-area: main; }
+    .grid-side { grid-area: side; }
+    .grid-twin-1 { grid-area: twin1; }
+    .grid-twin-2 { grid-area: twin2; }
+    @media (max-width: 1100px) {
+      .grid {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "main"
+          "side"
+          "twin1"
+          "twin2";
+      }
     }
     .panel {
       background: linear-gradient(180deg, #ffffff 0%, #f7f9ff 100%);
@@ -474,12 +491,12 @@
       z-index: 1;
     }
     .strata-table {
-      table-layout: fixed;
+      table-layout: auto;
       width: 100%;
     }
     .strata-table th,
     .strata-table td {
-      white-space: nowrap;
+      white-space: normal;
     }
     .stat-row {
       display: flex;
@@ -520,7 +537,7 @@
     </div>
 
     <div class="grid">
-      <section class="panel">
+      <section class="panel grid-main">
         <h2>1) Load your Excel</h2>
         <div id="dropzone" class="dropzone" tabindex="0">
           <strong>Drag & drop</strong> an Excel file (.xlsx, .xls, .xlsm, .xlsb)<br>
@@ -537,7 +554,7 @@
         <div id="populationMeta" class="hint"></div>
       </section>
 
-      <section class="panel">
+      <section class="panel grid-side">
         <h2>2) Configure sampling</h2>
         <form id="configForm">
           <label for="method">Method</label>
@@ -613,12 +630,12 @@
         </form>
       </section>
 
-      <section class="panel">
+      <section class="panel grid-twin-1">
         <h2>3) Plan allocation</h2>
         <div id="planBox" class="hint">Load data and click "Plan sample" to see per-stratum counts.</div>
       </section>
 
-      <section class="panel">
+      <section class="panel grid-twin-2">
         <h2>4) Review & download</h2>
         <div class="action-grid">
           <div class="action-card">
