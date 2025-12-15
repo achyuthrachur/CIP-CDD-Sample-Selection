@@ -458,6 +458,19 @@
       font-size: 15px;
       font-weight: 700;
     }
+    .table-wrap {
+      overflow: auto;
+    }
+    .strata-card {
+      margin-top: 10px;
+    }
+    .strata-table th:first-child,
+    .strata-table td:first-child {
+      position: sticky;
+      left: 0;
+      background: #f7f9ff;
+      z-index: 1;
+    }
     .stat-row {
       display: flex;
       flex-wrap: wrap;
@@ -527,11 +540,11 @@
 
           <div class="row">
             <div>
-              <label for="confidence">Confidence <span class="help-icon" title="Typical: 0.95 or 0.99. Must be between 0 and 1.">"</span></label>
+              <label for="confidence">Confidence level <span class="help-icon" title="Typical: 0.95 or 0.99. Must be between 0 and 1.">"</span></label>
               <input type="number" step="0.001" id="confidence" name="confidence" value="0.99" min="0.5" max="0.9999">
             </div>
             <div>
-              <label for="margin">Margin of error <span class="help-icon" title="Typical: 0.05. Must be between 0 and 1.">"</span></label>
+              <label for="margin">Tolerable error rate <span class="help-icon" title="Typical: 0.05. Must be between 0 and 1.">"</span></label>
               <input type="number" step="0.0001" id="margin" name="margin" value="0.0501" min="0.0001" max="0.5">
             </div>
             <div>
@@ -557,10 +570,11 @@
             </div>
           </div>
 
-          <label>Stratify by</label>
-          <input class="typeahead" id="stratifySearch" type="text" placeholder="Filter columns..." aria-label="Filter stratify columns">
+          <label for="stratifySelect">Stratify by</label>
+          <input class="typeahead" list="stratifyOptionsList" id="stratifySelect" name="stratifySelect" placeholder="Type to add stratify field" aria-label="Type to add stratify field" disabled>
+          <datalist id="stratifyOptionsList"></datalist>
+          <div class="hint">Select a column and press Enter to add. You can add multiple fields.</div>
           <div id="stratifyChips"></div>
-          <div id="stratifyOptions" class="checkboxes muted">Load a file to pick columns.</div>
 
           <label for="idColumnInput">ID column (optional)</label>
           <input class="typeahead" list="idColumnOptions" id="idColumnInput" name="idColumnInput" placeholder="Type to search columns">
@@ -655,8 +669,8 @@
     const fileInput = document.getElementById('fileInput');
     const demoBtn = document.getElementById('demoBtn');
     const columnsEl = document.getElementById('columns');
-    const stratifyOptionsEl = document.getElementById('stratifyOptions');
-    const stratifySearchEl = document.getElementById('stratifySearch');
+    const stratifySelect = document.getElementById('stratifySelect');
+    const stratifyOptionsList = document.getElementById('stratifyOptionsList');
     const stratifyChipsEl = document.getElementById('stratifyChips');
     const idColumnInput = document.getElementById('idColumnInput');
     const idColumnOptions = document.getElementById('idColumnOptions');
@@ -827,21 +841,24 @@
 
     function renderStratifyOptions() {
       if (!state.columns.length) {
-        stratifyOptionsEl.classList.add('muted');
-        stratifyOptionsEl.textContent = 'Load a file to pick columns.';
+        if (stratifySelect) {
+          stratifySelect.value = '';
+          stratifySelect.placeholder = 'Load a file to pick columns';
+          stratifySelect.disabled = true;
+        }
+        if (stratifyOptionsList) stratifyOptionsList.innerHTML = '';
         stratifyChipsEl.innerHTML = '';
         idColumnOptions.innerHTML = '';
         return;
       }
-      stratifyOptionsEl.classList.remove('muted');
-      const filter = (stratifySearchEl.value || '').toLowerCase();
-      stratifyOptionsEl.innerHTML = state.columns
-        .filter(col => col.toLowerCase().includes(filter))
-        .map(col => {
-          const checked = state.stratifySelected.includes(col) ? 'checked' : '';
-          return `<label><input type="checkbox" name="stratify" value="${col}" ${checked}> ${col}</label>`;
-        }).join('');
-
+      if (stratifySelect) {
+        stratifySelect.disabled = false;
+        stratifySelect.placeholder = 'Type to add stratify field';
+        stratifySelect.value = '';
+      }
+      if (stratifyOptionsList) {
+        stratifyOptionsList.innerHTML = state.columns.map(col => `<option value="${col}"></option>`).join('');
+      }
       idColumnOptions.innerHTML = `<option value=""></option>` + state.columns.map(col => `<option value="${col}">${col}</option>`).join('');
       renderStratifyChips();
     }
@@ -858,9 +875,6 @@
       stratifyChipsEl.querySelectorAll('button[data-chip]').forEach(btn => {
         btn.addEventListener('click', () => {
           const val = btn.getAttribute('data-chip');
-          const safeVal = (window.CSS && CSS.escape) ? CSS.escape(val) : val.replace(/"/g, '\\"');
-          const checkbox = stratifyOptionsEl.querySelector(`input[value="${safeVal}"]`);
-          if (checkbox) checkbox.checked = false;
           setStratifySelection(val, false);
         });
       });
@@ -1033,7 +1047,7 @@
 
     function statisticalSampleSize(N, confidence, margin, expectedError) {
       if (N <= 0) return 0;
-      if (!(margin > 0 && margin < 1)) throw new Error('Margin must be in (0,1).');
+      if (!(margin > 0 && margin < 1)) throw new Error('Tolerable error rate must be in (0,1).');
       if (!(expectedError >= 0 && expectedError <= 1)) throw new Error('Expected error rate must be in [0,1].');
       const z = zScore(confidence);
       const p = expectedError;
@@ -1191,6 +1205,11 @@
       };
 
       const formatNumber = (n, digits = 2) => Number.isFinite(n) ? n.toLocaleString(undefined, { maximumFractionDigits: digits }) : '-';
+      const formatValue = (v) => {
+        if (v === null || v === undefined) return 'n/a';
+        if (v === '') return '(blank)';
+        return String(v);
+      };
 
       const renderStatPills = (summary) => {
         if (!summary.numeric.length) {
@@ -1222,6 +1241,49 @@
             <div class="stat-row">${renderStatPills(sample)}</div>
           </div>
         </div>
+        ${state.summary.stratify_fields && state.summary.stratify_fields.length ? `
+        <div class="stats-card strata-card">
+          <div class="stat-row">
+            <span class="stat-pill"><strong>Stratified distribution</strong></span>
+            <span class="stat-pill">Fields: ${state.summary.stratify_fields.join(', ')}</span>
+          </div>
+          <div class="table-wrap">
+            <table class="table-zebra strata-table">
+              <thead>
+                <tr>
+                  ${state.summary.stratify_fields.map(f => `<th>${f}</th>`).join('')}
+                  <th>Population</th>
+                  <th>Pop %</th>
+                  <th>Sample</th>
+                  <th>Sample %</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${(() => {
+                  const allocations = (state.summary.allocations || []).slice().sort((a, b) => (b.population_count ?? 0) - (a.population_count ?? 0));
+                  if (!allocations.length) {
+                    return `<tr><td colspan="${state.summary.stratify_fields.length + 4}" class="stat-muted">No stratification distribution available.</td></tr>`;
+                  }
+                  return allocations.map(a => {
+                    const cells = state.summary.stratify_fields.map(f => `<td>${formatValue((a.stratum || {})[f])}</td>`).join('');
+                    const popCount = a.population_count ?? 0;
+                    const sampleCount = a.sample_count ?? 0;
+                    return `
+                      <tr>
+                        ${cells}
+                        <td>${popCount.toLocaleString()}</td>
+                        <td>${formatNumber((a.share_of_population ?? 0) * 100)}%</td>
+                        <td>${sampleCount.toLocaleString()}</td>
+                        <td>${formatNumber((a.share_of_sample ?? 0) * 100)}%</td>
+                      </tr>
+                    `;
+                  }).join('');
+                })()}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        ` : ''}
         <div class="stat-muted">Identifier-like numeric fields (e.g., IDs/GCI) are excluded. Up to four numeric columns are summarized. Stats update when you regenerate the sample.</div>
       `;
     }
@@ -1591,16 +1653,24 @@
       }
     });
 
-    stratifyOptionsEl.addEventListener('change', (e) => {
-      if (e.target && e.target.name === 'stratify') {
-        const val = e.target.value;
-        setStratifySelection(val, e.target.checked);
+    if (stratifySelect) {
+      const addStratifyField = () => {
+        const val = (stratifySelect.value || '').trim();
+        if (!val) return;
+        if (!state.columns.includes(val)) {
+          setStatus('Select a column from the list to stratify.', 'danger');
+          return;
+        }
+        setStratifySelection(val, true);
         runBtn.disabled = true;
-      }
-    });
-    if (stratifySearchEl) {
-      stratifySearchEl.addEventListener('input', () => {
-        renderStratifyOptions();
+        stratifySelect.value = '';
+      };
+      stratifySelect.addEventListener('change', addStratifyField);
+      stratifySelect.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          addStratifyField();
+        }
       });
     }
 
