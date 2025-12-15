@@ -917,7 +917,7 @@
       fileInput.addEventListener('change', e => handleFiles(e.target.files));
       demoBtn.addEventListener('click', async () => {
         try {
-          const demoPath = './synthetic_onboarding_data.xlsx"ts=' + Date.now(); // cache-buster
+          const demoPath = './synthetic_onboarding_data.xlsx?ts=' + Date.now(); // cache-buster
           const resp = await fetch(demoPath);
           if (!resp.ok) throw new Error('Demo file not found');
           const buf = await resp.arrayBuffer();
