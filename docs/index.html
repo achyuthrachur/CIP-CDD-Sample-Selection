@@ -6,12 +6,12 @@
   <title>CIP / CDD Sample Selection</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2"family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jstat@1.9.6/dist/jstat.min.js"></script>
   <style>
     :root {
-      --bg: #edf1f9;
+      --bg: #f4f6fb;
       --panel: #ffffff;
       --accent: #2563eb;
       --accent-2: #f59e0b;
@@ -27,25 +27,38 @@
     body {
       margin: 0;
       font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
-      background:
-        radial-gradient(circle at 18% 18%, rgba(37,99,235,0.12), transparent 28%),
+      background: radial-gradient(circle at 18% 18%, rgba(37,99,235,0.12), transparent 28%),
         radial-gradient(circle at 82% 8%, rgba(245,158,11,0.14), transparent 32%),
-        linear-gradient(135deg, #f8fafc 0%, #edf1f9 100%);
+        linear-gradient(135deg, #f8fafc 0%, #f4f6fb 100%);
+      background-size: 200% 200%;
+      animation: bg-shift 18s ease-in-out infinite;
       color: var(--text);
       min-height: 100vh;
     }
+    @keyframes bg-shift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
     a { color: var(--accent); }
     main {
-      width: min(1800px, 100% - 12px);
+      width: min(1800px, 100% - 24px);
       margin: 0 auto;
-      padding: 16px 12px 24px;
+      padding: 16px 12px 32px;
       display: grid;
-      gap: 10px;
+      gap: 14px;
+    }
+    header {
+      background: linear-gradient(135deg, #e0e7ff 0%, #f5f3ff 60%, #fff 100%);
+      border: 1px solid #e5e7f5;
+      border-radius: 16px;
+      padding: 16px 16px 18px;
+      box-shadow: 0 14px 28px rgba(37,99,235,0.12);
     }
     header h1 {
       margin: 0 0 4px 0;
-      font-weight: 600;
-      letter-spacing: -0.4px;
+      font-weight: 700;
+      letter-spacing: -0.6px;
     }
     header p {
       margin: 0;
@@ -60,14 +73,20 @@
     .panel {
       background: linear-gradient(180deg, #ffffff 0%, #f7f9ff 100%);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px;
+      border-radius: 16px;
+      padding: 18px;
       box-shadow: var(--shadow);
       overflow: hidden;
       height: 100%;
       display: flex;
       flex-direction: column;
       position: relative;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .panel:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 20px 40px rgba(37,99,235,0.15);
+      border-color: rgba(37,99,235,0.2);
     }
     .panel h2 {
       margin: 0 0 10px 0;
@@ -93,12 +112,13 @@
       align-items: center;
       gap: 6px;
       padding: 6px 10px;
-      border-radius: 10px;
+      border-radius: 999px;
       background: var(--pill);
       color: var(--text);
       font-size: 12px;
       margin: 4px 4px 4px 0;
       border: 1px solid var(--border);
+      box-shadow: 0 6px 14px rgba(15,23,42,0.06);
     }
     label {
       display: block;
@@ -159,6 +179,10 @@
       transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.2s;
       box-shadow: 0 10px 28px rgba(37,99,235,0.25);
     }
+    button:hover:not(:disabled) {
+      transform: translateY(-1px) scale(1.01);
+      box-shadow: 0 14px 32px rgba(37,99,235,0.28);
+    }
     button.secondary {
       background: linear-gradient(135deg, #f7f9ff, #eef2f8);
       color: var(--text);
@@ -175,10 +199,10 @@
     .pill-danger { border-color: rgba(255,140,140,0.3); color: var(--danger); }
     .summary {
       background: linear-gradient(180deg, #f9fbff 0%, #f4f7fd 100%);
-      border-radius: 12px;
+      border-radius: 14px;
       padding: 14px;
       border: 1px solid var(--border);
-      border-left: 3px solid var(--accent);
+      border-left: 4px solid var(--accent);
       max-height: none;
       min-height: 140px;
       overflow: auto;
@@ -186,6 +210,12 @@
       font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
       color: var(--text);
       line-height: 1.5;
+      box-shadow: 0 8px 20px rgba(15,23,42,0.08);
+      transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .summary:hover {
+      border-color: rgba(37,99,235,0.25);
+      box-shadow: 0 12px 28px rgba(15,23,42,0.12);
     }
     .badge {
       display: inline-flex;
@@ -269,54 +299,186 @@
       border-radius: 12px;
       padding: 10px 12px;
       box-shadow: 0 12px 24px rgba(15,23,42,0.08);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .action-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 16px 30px rgba(15,23,42,0.1);
+      border-color: rgba(37,99,235,0.18);
     }
     .buttons.tight {
       gap: 8px;
       margin-top: 6px;
     }
-    .stats-pane {
-      margin-top: 12px;
-      background: linear-gradient(180deg, #f9fbff 0%, #eef3fb 100%);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
-    }
-    .stats-grid {
-      display: grid;
-      gap: 10px;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    }
-    .stats-card {
-      background: #fff;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px 12px;
-      box-shadow: 0 4px 12px rgba(31,42,61,0.05);
-    }
-    .stats-card h3 {
-      margin: 0 0 6px 0;
-      font-size: 14px;
-      font-weight: 600;
-    }
-    .stat-row {
+    .status-bar {
       display: flex;
       flex-wrap: wrap;
-      gap: 6px;
+      gap: 10px;
       align-items: center;
+      padding: 10px 12px;
+      background: linear-gradient(135deg, #e0e7ff 0%, #eef2ff 100%);
+      border: 1px solid #d7def7;
+      border-radius: 12px;
+      box-shadow: 0 10px 24px rgba(15,23,42,0.08);
+      font-size: 13px;
+      color: var(--text);
     }
-    .stat-pill {
+    .pill.badge {
+      margin: 0;
+      padding: 6px 12px;
+    }
+    .badge-warn {
+      background: #fff7ed;
+      border-color: #fed7aa;
+      color: #b45309;
+    }
+    .badge-ok {
+      background: #ecfdf3;
+      border-color: #bbf7d0;
+      color: #166534;
+    }
+    .help-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #eef2f8;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 11px;
+      margin-left: 6px;
+      cursor: help;
+    }
+    .focus-ring:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, .dropzone:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+      box-shadow: 0 0 0 4px rgba(37,99,235,0.15);
+    }
+    .table-zebra tbody tr:nth-child(odd) {
+      background: #f7f9ff;
+    }
+    .table-zebra thead th {
+      position: sticky;
+      top: 0;
+      background: #eef2ff;
+      z-index: 1;
+    }
+    .chip {
       display: inline-flex;
       align-items: center;
       gap: 6px;
       padding: 6px 10px;
       border-radius: 999px;
-      background: #f0f3f9;
+      background: #eef2f8;
+      border: 1px solid var(--border);
+      font-size: 12px;
+      margin: 4px 6px 0 0;
+      box-shadow: 0 6px 12px rgba(15,23,42,0.05);
+    }
+    .chip button {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      color: var(--muted);
+      font-weight: 700;
+      padding: 0 4px;
+    }
+    .recent-list {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .recent-item {
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+      cursor: pointer;
+      font-size: 12px;
+      box-shadow: 0 6px 14px rgba(15,23,42,0.06);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .recent-item:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 18px rgba(15,23,42,0.1);
+    }
+    .file-chip {
+      margin-top: 8px;
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 12px;
+      background: #eef2ff;
+      border: 1px solid #dbe3f2;
+      border-radius: 12px;
+      font-size: 12px;
+      box-shadow: 0 8px 16px rgba(15,23,42,0.07);
+    }
+    .typeahead {
+      width: 100%;
+      margin: 6px 0;
+    }
+    .stats-pane {
+      margin-top: 14px;
+      background: linear-gradient(180deg, #f9fbff 0%, #eef3fb 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 10px 24px rgba(15,23,42,0.06);
+      transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+    }
+    .stats-pane:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 16px 32px rgba(15,23,42,0.1);
+      border-color: rgba(37,99,235,0.2);
+    }
+    .stats-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    }
+    .stats-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 8px 18px rgba(15,23,42,0.06);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .stats-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 26px rgba(15,23,42,0.12);
+      border-color: rgba(37,99,235,0.16);
+    }
+    .stats-card h3 {
+      margin: 0 0 10px 0;
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .stat-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .stat-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #eef2f8;
       border: 1px solid var(--border);
       color: var(--text);
       font-size: 12px;
       white-space: nowrap;
+      box-shadow: 0 6px 14px rgba(15,23,42,0.05);
     }
+    .stat-pill strong { font-weight: 700; }
     .stat-muted {
       color: var(--muted);
       font-size: 12px;
@@ -330,11 +492,14 @@
       <h1>CIP / CDD Sample Selection</h1>
       <p class="muted">Client-side Excel sampling with statistical defaults (99% / 5% / 1%). Drag and drop your file to begin.</p>
     </header>
+    <div class="status-bar" id="statusBar" aria-live="polite">
+      <span class="pill badge badge-warn">No dataset loaded</span>
+    </div>
 
     <div class="grid">
       <section class="panel">
         <h2>1) Load your Excel</h2>
-        <div id="dropzone" class="dropzone">
+        <div id="dropzone" class="dropzone" tabindex="0">
           <strong>Drag & drop</strong> an Excel file (.xlsx, .xls, .xlsm, .xlsb)<br>
           or <label for="fileInput" style="color: var(--accent); cursor: pointer; text-decoration: underline;">browse</label>
           <div class="hint" id="sheetNameHint"></div>
@@ -343,6 +508,8 @@
         <div class="buttons" style="margin-top:10px;">
           <button type="button" id="demoBtn" class="secondary">Load demo data</button>
         </div>
+        <div id="fileMeta" class="file-chip" style="display:none;"></div>
+        <div id="recentUploads" class="recent-list"></div>
         <div id="columns" style="margin-top:12px;"></div>
         <div id="populationMeta" class="hint"></div>
       </section>
@@ -360,43 +527,44 @@
 
           <div class="row">
             <div>
-              <label for="confidence">Confidence</label>
+              <label for="confidence">Confidence <span class="help-icon" title="Typical: 0.95 or 0.99. Must be between 0 and 1.">"</span></label>
               <input type="number" step="0.001" id="confidence" name="confidence" value="0.99" min="0.5" max="0.9999">
             </div>
             <div>
-              <label for="margin">Margin of error</label>
+              <label for="margin">Margin of error <span class="help-icon" title="Typical: 0.05. Must be between 0 and 1.">"</span></label>
               <input type="number" step="0.0001" id="margin" name="margin" value="0.0501" min="0.0001" max="0.5">
             </div>
             <div>
-              <label for="expectedError">Expected error rate</label>
+              <label for="expectedError">Expected error rate <span class="help-icon" title="Proportion you expect to be in error. Must be between 0 and 1.">"</span></label>
               <input type="number" step="0.001" id="expectedError" name="expectedError" value="0.01" min="0" max="0.5">
             </div>
           </div>
 
           <div class="row">
             <div>
-              <label for="sampleSize">Sample size (optional)</label>
+              <label for="sampleSize">Sample size (optional) <span class="help-icon" title="Override to a fixed size. Used by simple random / systematic, or as override.">"</span></label>
               <input type="number" id="sampleSize" name="sampleSize" placeholder="auto">
               <div class="hint">Use for simple random/systematic, or override.</div>
             </div>
             <div>
-              <label for="samplePct">Sample % (optional)</label>
+              <label for="samplePct">Sample % (optional) <span class="help-icon" title="Percentage of population to sample.">"</span></label>
               <input type="number" id="samplePct" name="samplePct" placeholder="e.g. 10">
               <div class="hint">Use with percentage/simple_random/systematic.</div>
             </div>
             <div>
-              <label for="systematicStep">Systematic step (optional)</label>
+              <label for="systematicStep">Systematic step (optional) <span class="help-icon" title="Interval for systematic sampling. Leave blank for auto.">"</span></label>
               <input type="number" id="systematicStep" name="systematicStep" placeholder="auto">
             </div>
           </div>
 
           <label>Stratify by</label>
+          <input class="typeahead" id="stratifySearch" type="text" placeholder="Filter columns..." aria-label="Filter stratify columns">
+          <div id="stratifyChips"></div>
           <div id="stratifyOptions" class="checkboxes muted">Load a file to pick columns.</div>
 
-          <label for="idColumn">ID column (optional)</label>
-          <select id="idColumn" name="idColumn">
-            <option value="">(none)</option>
-          </select>
+          <label for="idColumnInput">ID column (optional)</label>
+          <input class="typeahead" list="idColumnOptions" id="idColumnInput" name="idColumnInput" placeholder="Type to search columns">
+          <datalist id="idColumnOptions"></datalist>
 
           <div class="row">
             <div>
@@ -417,7 +585,7 @@
             <button type="submit" id="runBtn" disabled>Generate sample</button>
             <button type="button" class="secondary" id="resetBtn">Reset</button>
           </div>
-          <div class="hint" id="status"></div>
+          <div class="hint" id="status" aria-live="polite"></div>
         </form>
       </section>
 
@@ -441,12 +609,12 @@
               <button type="button" id="genReport" class="secondary" disabled>Generate summary report</button>
               <button type="button" id="downloadReport" disabled>Download summary report</button>
             </div>
-            <div class="hint" id="reportStatus">Generate after sampling.</div>
+            <div class="hint" id="reportStatus" aria-live="polite">Generate after sampling.</div>
             <div class="progress" id="reportProgress" style="display:none;"><div class="progress-bar"></div></div>
           </div>
         </div>
-        <div class="stats-pane" id="statsPane">Run sampling to see summary statistics.</div>
         <div class="summary" id="summaryBox">Load data and run sampling to see results.</div>
+        <div class="stats-pane" id="statsPane">Run sampling to see summary statistics.</div>
       </section>
     </div>
   </main>
@@ -462,6 +630,9 @@
       fileName: null,
       plan: null,
       report: '',
+      recentUploads: [],
+      stratifySelected: [],
+      fileMeta: null,
     };
     // Serverless report endpoint (Netlify). Replace with your deployed URL.
     const REPORT_FUNCTION_URL = 'https://frolicking-dusk-5c6419.netlify.app/.netlify/functions/report';
@@ -471,7 +642,10 @@
     const demoBtn = document.getElementById('demoBtn');
     const columnsEl = document.getElementById('columns');
     const stratifyOptionsEl = document.getElementById('stratifyOptions');
-    const idColumnEl = document.getElementById('idColumn');
+    const stratifySearchEl = document.getElementById('stratifySearch');
+    const stratifyChipsEl = document.getElementById('stratifyChips');
+    const idColumnInput = document.getElementById('idColumnInput');
+    const idColumnOptions = document.getElementById('idColumnOptions');
     const populationMetaEl = document.getElementById('populationMeta');
     const statusEl = document.getElementById('status');
     const summaryBox = document.getElementById('summaryBox');
@@ -480,6 +654,9 @@
     const downloadReportBtn = document.getElementById('downloadReport');
     const reportStatusEl = document.getElementById('reportStatus');
     const reportProgress = document.getElementById('reportProgress');
+    const fileMetaEl = document.getElementById('fileMeta');
+    const recentUploadsEl = document.getElementById('recentUploads');
+    const statusBarEl = document.getElementById('statusBar');
 
     const planBtn = document.getElementById('planBtn');
     const runBtn = document.getElementById('runBtn');
@@ -490,15 +667,16 @@
 
     function setStatus(msg, tone = 'muted') {
       statusEl.textContent = msg;
-      statusEl.style.color = tone === 'danger' ? 'var(--danger)' : tone === 'success' ? 'var(--success)' : 'var(--muted)';
+      statusEl.style.color = tone === 'danger' " 'var(--danger)' : tone === 'success' " 'var(--success)' : 'var(--muted)';
+      updateStatusBar();
     }
 
     function setReportStatus(msg, tone = 'muted') {
       reportStatusEl.textContent = msg;
-      reportStatusEl.style.color = tone === 'danger' ? 'var(--danger)' : tone === 'success' ? 'var(--success)' : 'var(--muted)';
+      reportStatusEl.style.color = tone === 'danger' " 'var(--danger)' : tone === 'success' " 'var(--success)' : 'var(--muted)';
     }
     function showReportProgress(show) {
-      reportProgress.style.display = show ? 'block' : 'none';
+      reportProgress.style.display = show " 'block' : 'none';
     }
 
     function normalizeValue(value) {
@@ -508,28 +686,152 @@
       return value;
     }
 
+    function formatBytes(bytes) {
+      if (!bytes && bytes !== 0) return 'n/a';
+      const units = ['B','KB','MB','GB'];
+      let i = 0;
+      let val = bytes;
+      while (val >= 1024 && i < units.length - 1) {
+        val /= 1024;
+        i++;
+      }
+      return `${val.toFixed(val >= 10 " 0 : 1)} ${units[i]}`;
+    }
+
+    function updateStatusBar() {
+      if (!statusBarEl) return;
+      if (!state.population.length) {
+        statusBarEl.innerHTML = `<span class="pill badge badge-warn">No dataset loaded</span>`;
+        return;
+      }
+      const samplePart = state.sample.length " `<span class="pill badge badge-ok">Sample: ${state.sample.length.toLocaleString()}</span>` : '';
+      statusBarEl.innerHTML = `
+        <span class="pill badge badge-ok">Rows: ${state.population.length.toLocaleString()}</span>
+        <span class="pill badge">File: ${state.fileName || 'N/A'}</span>
+        <span class="pill badge">Sheet: ${state.sheetName || 'N/A'}</span>
+        ${samplePart}
+      `;
+    }
+
+    function renderFileMeta() {
+      if (!fileMetaEl) return;
+      const meta = state.fileMeta;
+      if (!meta) {
+        fileMetaEl.style.display = 'none';
+        fileMetaEl.textContent = '';
+        return;
+      }
+      fileMetaEl.style.display = 'inline-flex';
+      const modified = meta.lastModified " new Date(meta.lastModified).toLocaleString() : 'n/a';
+      fileMetaEl.textContent = `File: ${meta.name} • ${formatBytes(meta.size)} • Modified: ${modified}`;
+    }
+
+    function addRecentUpload(entry) {
+      state.recentUploads = [entry, ...state.recentUploads.filter(r => r.name !== entry.name)].slice(0, 3);
+      renderRecentUploads();
+    }
+
+    function renderRecentUploads() {
+      if (!recentUploadsEl) return;
+      if (!state.recentUploads.length) {
+        recentUploadsEl.textContent = '';
+        return;
+      }
+      recentUploadsEl.innerHTML = state.recentUploads.map((r, idx) => {
+        const modified = r.lastModified " new Date(r.lastModified).toLocaleDateString() : 'n/a';
+        return `<div class="recent-item" data-recent="${idx}" title="Use ${r.name} (${r.population.length.toLocaleString()} rows)">` +
+          `${r.name} • ${r.population.length.toLocaleString()} rows • ${modified}</div>`;
+      }).join('');
+      recentUploadsEl.querySelectorAll('.recent-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+          const idx = parseInt(e.currentTarget.getAttribute('data-recent'), 10);
+          const r = state.recentUploads[idx];
+          if (!r) return;
+          state.population = r.population;
+          state.columns = r.columns;
+          state.sheetName = r.sheetName;
+          state.fileName = r.name;
+          state.fileMeta = { name: r.name, size: r.size, lastModified: r.lastModified };
+          state.plan = null;
+          state.summary = null;
+          state.sample = [];
+          renderColumns();
+          renderStratifyOptions();
+          renderPlan();
+          renderSummary();
+          renderStats();
+          planBtn.disabled = false;
+          runBtn.disabled = true;
+          setStatus(`Reused ${r.population.length.toLocaleString()} rows from ${r.name}.`, 'success');
+          const labelText = r.name " ` (${r.name})` : '';
+          sheetNameHint.textContent = `Using sheet: ${r.sheetName}${labelText}`;
+        });
+      });
+    }
+
     function renderColumns() {
       if (!state.columns.length) {
         columnsEl.innerHTML = '';
         populationMetaEl.textContent = '';
+        updateStatusBar();
         return;
       }
       columnsEl.innerHTML = state.columns.map(col => `<span class="pill">${col}</span>`).join('');
-      populationMetaEl.textContent = `${state.population.length.toLocaleString()} records loaded${state.sheetName ? ` from sheet "${state.sheetName}"` : ''}.`;
+      populationMetaEl.textContent = `${state.population.length.toLocaleString()} records loaded${state.sheetName " ` from sheet "${state.sheetName}"` : ''}.`;
+      updateStatusBar();
     }
 
     function renderStratifyOptions() {
       if (!state.columns.length) {
         stratifyOptionsEl.classList.add('muted');
         stratifyOptionsEl.textContent = 'Load a file to pick columns.';
+        stratifyChipsEl.innerHTML = '';
+        idColumnOptions.innerHTML = '';
         return;
       }
       stratifyOptionsEl.classList.remove('muted');
-      stratifyOptionsEl.innerHTML = state.columns.map(col => {
-        return `<label><input type="checkbox" name="stratify" value="${col}"> ${col}</label>`;
-      }).join('');
+      const filter = (stratifySearchEl.value || '').toLowerCase();
+      stratifyOptionsEl.innerHTML = state.columns
+        .filter(col => col.toLowerCase().includes(filter))
+        .map(col => {
+          const checked = state.stratifySelected.includes(col) " 'checked' : '';
+          return `<label><input type="checkbox" name="stratify" value="${col}" ${checked}> ${col}</label>`;
+        }).join('');
 
-      idColumnEl.innerHTML = `<option value="">(none)</option>` + state.columns.map(col => `<option value="${col}">${col}</option>`).join('');
+      idColumnOptions.innerHTML = `<option value=""></option>` + state.columns.map(col => `<option value="${col}">${col}</option>`).join('');
+      renderStratifyChips();
+    }
+
+    function renderStratifyChips() {
+      if (!stratifyChipsEl) return;
+      if (!state.stratifySelected.length) {
+        stratifyChipsEl.innerHTML = '';
+        return;
+      }
+      stratifyChipsEl.innerHTML = state.stratifySelected.map(val => `
+        <span class="chip">${val} <button type="button" aria-label="Remove ${val}" data-chip="${val}">×</button></span>
+      `).join('');
+      stratifyChipsEl.querySelectorAll('button[data-chip]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const val = btn.getAttribute('data-chip');
+          const safeVal = (window.CSS && CSS.escape) " CSS.escape(val) : val.replace(/"/g, '\\"');
+          const checkbox = stratifyOptionsEl.querySelector(`input[value="${safeVal}"]`);
+          if (checkbox) checkbox.checked = false;
+          setStratifySelection(val, false);
+        });
+      });
+    }
+
+    function setStratifySelection(value, checked) {
+      if (checked) {
+        if (!state.stratifySelected.includes(value)) {
+          state.stratifySelected.push(value);
+        }
+      } else {
+        state.stratifySelected = state.stratifySelected.filter(v => v !== value);
+      }
+      state.plan = null;
+      renderStratifyChips();
     }
 
     function handleFiles(files) {
@@ -537,11 +839,12 @@
       const file = files[0];
       state.fileName = file.name;
       state.plan = null;
+      state.fileMeta = { name: file.name, size: file.size, lastModified: file.lastModified };
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
           const data = new Uint8Array(e.target.result);
-          processWorkbook(data, file.name);
+          processWorkbook(data, file.name, state.fileMeta);
         } catch (err) {
           console.error(err);
           setStatus('Failed to read Excel file. Ensure it has a header row.', 'danger');
@@ -550,7 +853,7 @@
       reader.readAsArrayBuffer(file);
     }
 
-    function processWorkbook(uint8array, fileNameLabel = 'Loaded file') {
+    function processWorkbook(uint8array, fileNameLabel = 'Loaded file', meta = null) {
       const workbook = XLSX.read(uint8array, { type: 'array' });
       const sheetName = workbook.SheetNames[0];
       state.sheetName = sheetName;
@@ -562,13 +865,29 @@
       }
       state.population = json;
       state.columns = Object.keys(json[0]);
+      state.sample = [];
+      state.summary = null;
+      state.plan = null;
+      state.stratifySelected = [];
+      state.fileMeta = meta;
+      addRecentUpload({
+        name: state.fileName || fileNameLabel,
+        sheetName: state.sheetName,
+        population: state.population,
+        columns: state.columns,
+        size: meta".size,
+        lastModified: meta".lastModified,
+      });
       renderColumns();
       renderStratifyOptions();
       renderPlan();
+      renderSummary();
+      renderStats();
+      renderFileMeta();
       setStatus(`Loaded ${json.length} rows from ${sheetName}.`, 'success');
       planBtn.disabled = false;
       runBtn.disabled = true;
-      const labelText = fileNameLabel ? ` (${fileNameLabel})` : '';
+      const labelText = fileNameLabel " ` (${fileNameLabel})` : '';
       sheetNameHint.textContent = `Using first sheet: ${sheetName}${labelText}`;
     }
 
@@ -589,16 +908,23 @@
       });
       dropzone.addEventListener('drop', e => handleFiles(e.dataTransfer.files));
       dropzone.addEventListener('click', () => fileInput.click());
+      dropzone.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          fileInput.click();
+        }
+      });
       fileInput.addEventListener('change', e => handleFiles(e.target.files));
       demoBtn.addEventListener('click', async () => {
         try {
-          const demoPath = './synthetic_onboarding_data.xlsx?ts=' + Date.now(); // cache-buster
+          const demoPath = './synthetic_onboarding_data.xlsx"ts=' + Date.now(); // cache-buster
           const resp = await fetch(demoPath);
           if (!resp.ok) throw new Error('Demo file not found');
           const buf = await resp.arrayBuffer();
           state.fileName = 'synthetic_onboarding_data.xlsx';
           state.plan = null;
-          processWorkbook(new Uint8Array(buf), 'Demo file (synthetic_onboarding_data.xlsx)');
+          state.fileMeta = { name: 'synthetic_onboarding_data.xlsx', size: buf.byteLength, lastModified: null };
+          processWorkbook(new Uint8Array(buf), 'Demo file (synthetic_onboarding_data.xlsx)', state.fileMeta);
         } catch (err) {
           console.error(err);
           setStatus('Failed to load demo data.', 'danger');
@@ -636,7 +962,7 @@
       const n = arr.length;
       if (size <= 0) return [];
       if (size >= n) return arr.slice();
-      const offset = randomStart ? Math.floor(rng() * Math.ceil(n / size)) : 0;
+      const offset = randomStart " Math.floor(rng() * Math.ceil(n / size)) : 0;
       const indices = [];
       for (let k = 0; k < size; k++) {
         const base = Math.floor((k * n) / size);
@@ -680,7 +1006,7 @@
         size = Math.ceil(N * (cfg.samplePercentage / 100));
       } else if (method === 'simple_random') {
         if (cfg.sampleSize == null && cfg.samplePercentage == null) throw new Error('Provide sampleSize or samplePercentage for simple_random.');
-        size = cfg.sampleSize != null ? cfg.sampleSize : Math.ceil(N * (cfg.samplePercentage / 100));
+        size = cfg.sampleSize != null " cfg.sampleSize : Math.ceil(N * (cfg.samplePercentage / 100));
       } else if (method === 'systematic') {
         if (cfg.sampleSize != null) {
           size = cfg.sampleSize;
@@ -762,7 +1088,7 @@
       }
       const total = rows.length;
       return Object.entries(counts).map(([key, count]) => {
-        const values = JSON.parse(key).map(v => v === MISSING_VALUE ? null : v);
+        const values = JSON.parse(key).map(v => v === MISSING_VALUE " null : v);
         const stratum = {};
         fields.forEach((f, i) => stratum[f] = values[i]);
         return { stratum, count, share: count / total };
@@ -773,21 +1099,31 @@
       return columns.filter(col => rows.some(r => typeof r[col] === 'number' && Number.isFinite(r[col])));
     }
 
+    function isIdentifierColumn(name, values) {
+      const lower = name.toLowerCase();
+      const idLike = /(id|identifier|gci|guid|uuid|code)$/i.test(lower);
+      const numericValues = values.filter(v => typeof v === 'number' && Number.isFinite(v));
+      const uniqueRatio = numericValues.length " new Set(numericValues).size / numericValues.length : 0;
+      const highCardinality = numericValues.length > 10 && uniqueRatio > 0.9;
+      return idLike || highCardinality;
+    }
+
     function summarizeNumericColumns(rows, columns) {
-      const numeric = numericColumns(rows, columns).slice(0, 4);
       const summaries = [];
+      const numeric = numericColumns(rows, columns);
       for (const col of numeric) {
         const vals = rows.map(r => r[col]).filter(v => typeof v === 'number' && Number.isFinite(v));
         if (!vals.length) continue;
+        if (isIdentifierColumn(col, vals)) continue;
         const sorted = vals.slice().sort((a, b) => a - b);
         const min = sorted[0];
         const max = sorted[sorted.length - 1];
         const mean = vals.reduce((s, v) => s + v, 0) / vals.length;
         const mid = Math.floor(sorted.length / 2);
-        const median = sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+        const median = sorted.length % 2 === 0 " (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
         summaries.push({ column: col, count: vals.length, min, max, mean, median });
       }
-      return summaries;
+      return summaries.slice(0, 4);
     }
 
     function renderStats() {
@@ -804,24 +1140,20 @@
       const sample = {
         rows: state.sample.length,
         numeric: summarizeNumericColumns(state.sample, state.columns),
-        share: state.population.length ? state.sample.length / state.population.length : 0,
+        share: state.population.length " state.sample.length / state.population.length : 0,
       };
 
-      const formatNumber = (n, digits = 2) => Number.isFinite(n) ? n.toLocaleString(undefined, { maximumFractionDigits: digits }) : '—';
+      const formatNumber = (n, digits = 2) => Number.isFinite(n) " n.toLocaleString(undefined, { maximumFractionDigits: digits }) : '—';
 
-      const numericSection = (label, summary) => {
+      const renderStatPills = (summary) => {
         if (!summary.numeric.length) {
-          return `<div class="stat-muted">No numeric columns detected.</div>`;
+          return `<div class="stat-muted">No numeric columns detected (identifier-like columns are skipped).</div>`;
         }
-        return `
-          <div class="stat-row">
-            ${summary.numeric.map(stat => `
-              <span class="stat-pill">
-                ${stat.column}: μ=${formatNumber(stat.mean)} (p50=${formatNumber(stat.median)}, min=${formatNumber(stat.min)}, max=${formatNumber(stat.max)})
-              </span>
-            `).join('')}
-          </div>
-        `;
+        return summary.numeric.map(stat => `
+          <span class="stat-pill">
+            <strong>${stat.column}</strong> · mean=${formatNumber(stat.mean)} · p50=${formatNumber(stat.median)} · min=${formatNumber(stat.min)} · max=${formatNumber(stat.max)}
+          </span>
+        `).join('');
       };
 
       pane.innerHTML = `
@@ -829,21 +1161,21 @@
           <div class="stats-card">
             <h3>Population</h3>
             <div class="stat-row">
-              <span class="stat-pill">Rows: ${pop.rows.toLocaleString()}</span>
-              <span class="stat-pill">Columns: ${state.columns.length}</span>
+              <span class="stat-pill"><strong>Rows</strong>: ${pop.rows.toLocaleString()}</span>
+              <span class="stat-pill"><strong>Columns</strong>: ${state.columns.length}</span>
             </div>
-            ${numericSection('Population', pop)}
+            <div class="stat-row">${renderStatPills(pop)}</div>
           </div>
           <div class="stats-card">
             <h3>Sample</h3>
             <div class="stat-row">
-              <span class="stat-pill">Rows: ${sample.rows.toLocaleString()}</span>
-              <span class="stat-pill">Share of population: ${formatNumber(sample.share * 100)}%</span>
+              <span class="stat-pill"><strong>Rows</strong>: ${sample.rows.toLocaleString()}</span>
+              <span class="stat-pill"><strong>Share</strong>: ${formatNumber(sample.share * 100)}%</span>
             </div>
-            ${numericSection('Sample', sample)}
+            <div class="stat-row">${renderStatPills(sample)}</div>
           </div>
         </div>
-        <div class="stat-muted">Up to four numeric columns are summarized. Statistics update when you regenerate the sample.</div>
+        <div class="stat-muted">Identifier-like numeric fields (e.g., IDs/GCI) are excluded. Up to four numeric columns are summarized. Stats update when you regenerate the sample.</div>
       `;
     }
     function configSignature(cfg) {
@@ -886,7 +1218,7 @@
       const counts = Object.fromEntries(Object.entries(groups).map(([k, arr]) => [k, arr.length]));
       const allocationsMap = proportionalAllocation(counts, desiredSize);
       const allocations = Object.entries(groups).map(([k, arr]) => {
-        const values = JSON.parse(k).map(v => v === MISSING_VALUE ? null : v);
+        const values = JSON.parse(k).map(v => v === MISSING_VALUE " null : v);
         const stratum = {};
         cfg.stratifyFields.forEach((f, i) => stratum[f] = values[i]);
         return {
@@ -913,7 +1245,7 @@
         return;
       }
       const rowsHtml = state.plan.allocations.map((a, idx) => {
-        const label = Object.entries(a.stratum).map(([k, v]) => `${k}: ${v === null ? 'NULL' : v}`).join(', ') || '(all)';
+        const label = Object.entries(a.stratum).map(([k, v]) => `${k}: ${v === null " 'NULL' : v}`).join(', ') || '(all)';
         const encodedKey = encodeURIComponent(a.key);
         return `
           <tr>
@@ -926,19 +1258,21 @@
       }).join('');
       const total = state.plan.allocations.reduce((s, a) => s + a.sample_count, 0);
       state.plan.plannedSize = total;
+      const match = total === state.plan.desiredSize;
       planBox.innerHTML = `
-        <div class="badge">Planned total: ${total}</div>
-        <div class="badge">Calculated target: ${state.plan.desiredSize}</div>
+        <div class="badge pill ${match " 'badge-ok' : 'badge-warn'}">Planned total: ${total}</div>
+        <div class="badge pill">Calculated target: ${state.plan.desiredSize}</div>
         <div class="plan-scroll">
-          <table>
+          <table class="table-zebra">
             <thead>
               <tr><th>#</th><th>Stratum</th><th>Population</th><th>Sample count</th></tr>
             </thead>
             <tbody>${rowsHtml}</tbody>
           </table>
         </div>
-        <div class="hint">Adjust sample counts per stratum if needed, then click “Generate sample”.</div>
+        <div class="hint">${match " 'Adjust sample counts per stratum if needed, then click "Generate sample".' : 'Totals differ from target — adjust counts or proceed if override is intended.'}</div>
       `;
+
       planBox.querySelectorAll('input[type="number"]').forEach(input => {
         input.addEventListener('input', (e) => {
           const encoded = e.target.getAttribute('data-plan-key') || '';
@@ -955,7 +1289,7 @@
 
     function stratifiedSample(rows, cfg, rng, desiredSize, allocationOverrides = null) {
       const fields = cfg.stratifyFields;
-      const totalSize = desiredSize ?? resolveSampleSize(rows.length, cfg);
+      const totalSize = desiredSize "" resolveSampleSize(rows.length, cfg);
       if (totalSize <= 0) return { sample: [], allocations: [] };
 
       const groups = {};
@@ -979,7 +1313,7 @@
         } else {
           chosen = randomSample(groupRows, alloc, rng);
         }
-        const values = JSON.parse(key).map(v => v === MISSING_VALUE ? null : v);
+        const values = JSON.parse(key).map(v => v === MISSING_VALUE " null : v);
         const stratum = {};
         fields.forEach((f, i) => stratum[f] = values[i]);
         allocationSummary.push({
@@ -1002,9 +1336,9 @@
           confidence: cfg.confidence,
           margin: cfg.margin,
           expected_error_rate: cfg.expectedErrorRate,
-          sample_size_parameter: cfg.sampleSize ?? null,
-          sample_percentage_parameter: cfg.samplePercentage ?? null,
-          systematic_step_parameter: cfg.systematicStep ?? null,
+          sample_size_parameter: cfg.sampleSize "" null,
+          sample_percentage_parameter: cfg.samplePercentage "" null,
+          systematic_step_parameter: cfg.systematicStep "" null,
           seed: cfg.seed,
           systematic_random_start: cfg.systematicRandomStart,
           planned_sample_size: plannedSize,
@@ -1023,28 +1357,28 @@
           distribution: distribution(sample, cfg.stratifyFields),
         },
         allocations,
-        sample_ids: cfg.idColumn ? sample.map(r => r[cfg.idColumn]) : undefined,
+        sample_ids: cfg.idColumn " sample.map(r => r[cfg.idColumn]) : undefined,
       };
     }
 
     function sampleData(population, cfg, plan) {
-      const desiredSize = plan ? plan.allocations.reduce((s, a) => s + a.sample_count, 0) : resolveSampleSize(population.length, cfg);
+      const desiredSize = plan " plan.allocations.reduce((s, a) => s + a.sample_count, 0) : resolveSampleSize(population.length, cfg);
       if (desiredSize <= 0 && population.length > 0) throw new Error('Calculated sample size is 0. Adjust parameters.');
 
-      const rng = rngFactory(cfg.seed ?? 42);
+      const rng = rngFactory(cfg.seed "" 42);
       let sample = [];
       let allocations = [];
       if (cfg.stratifyFields.length) {
-        const overrideMap = plan ? Object.fromEntries(plan.allocations.map(a => [a.key, a.sample_count])) : null;
+        const overrideMap = plan " Object.fromEntries(plan.allocations.map(a => [a.key, a.sample_count])) : null;
         ({ sample, allocations } = stratifiedSample(population, cfg, rng, desiredSize, overrideMap));
       } else {
-        const take = plan ? Math.min(desiredSize, population.length) : desiredSize;
+        const take = plan " Math.min(desiredSize, population.length) : desiredSize;
         if (cfg.method === 'systematic') {
           sample = systematicSample(population, take, cfg.systematicRandomStart, rng);
         } else {
           sample = randomSample(population, take, rng);
         }
-        allocations = plan ? [
+        allocations = plan " [
           {
             stratum: {},
             population_count: population.length,
@@ -1062,7 +1396,7 @@
       const escape = (v) => {
         if (v === null || v === undefined) return '';
         const s = String(v).replace(/"/g, '""');
-        return /[",\n]/.test(s) ? `"${s}"` : s;
+        return /[",\n]/.test(s) " `"${s}"` : s;
       };
       const header = columns.join(',');
       const lines = rows.map(r => columns.map(c => escape(r[c])).join(','));
@@ -1080,6 +1414,7 @@
         setReportStatus('Generate after sampling.');
         showReportProgress(false);
         renderStats();
+        updateStatusBar();
         return;
       }
       const s = state.summary;
@@ -1092,7 +1427,7 @@
         lines.push('');
         lines.push('Per-stratum sample counts:');
         s.allocations.forEach(a => {
-          const desc = Object.entries(a.stratum || {}).map(([k, v]) => `${k}=${v === null ? 'NULL' : v}`).join(', ');
+          const desc = Object.entries(a.stratum || {}).map(([k, v]) => `${k}=${v === null " 'NULL' : v}`).join(', ');
           lines.push(`- ${desc}: ${a.sample_count} of ${a.population_count} (${(a.share_of_sample * 100).toFixed(1)}% of sample)`);
         });
       }
@@ -1101,6 +1436,7 @@
       downloadJsonBtn.disabled = false;
        genReportBtn.disabled = false;
       renderStats();
+      updateStatusBar();
     }
 
     function readConfigForm() {
@@ -1112,21 +1448,22 @@
       const sampleSizeVal = form.sampleSize.value.trim();
       const samplePctVal = form.samplePct.value.trim();
       const stepVal = form.systematicStep.value.trim();
-      const stratifyFields = Array.from(form.querySelectorAll('input[name="stratify"]:checked')).map(cb => cb.value);
+      const stratifyFields = state.stratifySelected.slice();
       const seed = parseInt(form.seed.value, 10);
       const randomStart = form.randomStart.value === 'yes';
-      const idColumn = form.idColumn.value || null;
+      const idRaw = (idColumnInput.value || '').trim();
+      const idColumn = state.columns.includes(idRaw) " idRaw : null;
 
       return {
         method,
         confidence,
         margin,
         expectedErrorRate: expectedError,
-        sampleSize: sampleSizeVal === '' ? null : parseInt(sampleSizeVal, 10),
-        samplePercentage: samplePctVal === '' ? null : parseFloat(samplePctVal),
-        systematicStep: stepVal === '' ? null : parseInt(stepVal, 10),
+        sampleSize: sampleSizeVal === '' " null : parseInt(sampleSizeVal, 10),
+        samplePercentage: samplePctVal === '' " null : parseFloat(samplePctVal),
+        systematicStep: stepVal === '' " null : parseInt(stepVal, 10),
         stratifyFields,
-        seed: Number.isFinite(seed) ? seed : 42,
+        seed: Number.isFinite(seed) " seed : 42,
         systematicRandomStart: randomStart,
         idColumn,
       };
@@ -1141,6 +1478,9 @@
       state.fileName = null;
       state.plan = null;
       state.report = '';
+      state.fileMeta = null;
+      state.stratifySelected = [];
+      idColumnInput.value = '';
       fileInput.value = '';
       renderColumns();
       renderStratifyOptions();
@@ -1155,6 +1495,8 @@
       sheetNameHint.textContent = '';
       setStatus('Reset. Load a new file.', 'muted');
       renderStats();
+      renderFileMeta();
+      updateStatusBar();
     }
 
     planBtn.addEventListener('click', () => {
@@ -1202,6 +1544,19 @@
       }
     });
 
+    stratifyOptionsEl.addEventListener('change', (e) => {
+      if (e.target && e.target.name === 'stratify') {
+        const val = e.target.value;
+        setStratifySelection(val, e.target.checked);
+        runBtn.disabled = true;
+      }
+    });
+    if (stratifySearchEl) {
+      stratifySearchEl.addEventListener('input', () => {
+        renderStratifyOptions();
+      });
+    }
+
     resetBtn.addEventListener('click', resetAll);
 
     downloadCsvBtn.addEventListener('click', () => {
@@ -1242,7 +1597,7 @@
         throw new Error(`Report API error: ${resp.status} ${text}`);
       }
       const data = await resp.json();
-      const content = data.report?.trim();
+      const content = data.report".trim();
       if (!content) throw new Error('No content returned from report API.');
       return content;
     }
@@ -1281,6 +1636,8 @@
     });
 
     setupDropzone();
+    renderRecentUploads();
+    renderFileMeta();
     renderSummary();
     renderPlan();
     planBtn.disabled = true;
