@@ -11,26 +11,26 @@
   <script src="https://cdn.jsdelivr.net/npm/jstat@1.9.6/dist/jstat.min.js"></script>
   <style>
     :root {
-      --bg: #f6f7fb;
+      --bg: #edf1f9;
       --panel: #ffffff;
-      --accent: #2f80ed;
-      --accent-2: #ec6f66;
-      --muted: #5f6c7b;
-      --text: #1f2a3d;
-      --success: #1aa36f;
-      --danger: #d64545;
-      --border: #e1e6ef;
-      --pill: #f0f3f9;
-      --shadow: 0 20px 60px rgba(31,42,61,0.12);
+      --accent: #2563eb;
+      --accent-2: #f59e0b;
+      --muted: #5b657a;
+      --text: #0f172a;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --border: #dbe3f2;
+      --pill: #eef2f8;
+      --shadow: 0 16px 40px rgba(15,23,42,0.12);
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
       background:
-        radial-gradient(circle at 15% 15%, rgba(47,128,237,0.08), transparent 25%),
-        radial-gradient(circle at 80% 0%, rgba(236,111,102,0.12), transparent 30%),
-        var(--bg);
+        radial-gradient(circle at 18% 18%, rgba(37,99,235,0.12), transparent 28%),
+        radial-gradient(circle at 82% 8%, rgba(245,158,11,0.14), transparent 32%),
+        linear-gradient(135deg, #f8fafc 0%, #edf1f9 100%);
       color: var(--text);
       min-height: 100vh;
     }
@@ -58,7 +58,7 @@
       align-items: start;
     }
     .panel {
-      background: var(--panel);
+      background: linear-gradient(180deg, #ffffff 0%, #f7f9ff 100%);
       border: 1px solid var(--border);
       border-radius: 14px;
       padding: 16px;
@@ -67,6 +67,7 @@
       height: 100%;
       display: flex;
       flex-direction: column;
+      position: relative;
     }
     .panel h2 {
       margin: 0 0 10px 0;
@@ -154,12 +155,12 @@
       font-weight: 600;
       cursor: pointer;
       color: #ffffff;
-      background: linear-gradient(135deg, var(--accent), #4da1ff);
+      background: linear-gradient(135deg, var(--accent), #3b82f6);
       transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.2s;
-      box-shadow: 0 10px 25px rgba(47,128,237,0.25);
+      box-shadow: 0 10px 28px rgba(37,99,235,0.25);
     }
     button.secondary {
-      background: #f4f6fb;
+      background: linear-gradient(135deg, #f7f9ff, #eef2f8);
       color: var(--text);
       box-shadow: none;
       border: 1px solid var(--border);
@@ -173,10 +174,11 @@
     .pill-success { border-color: rgba(92,225,166,0.3); color: var(--success); }
     .pill-danger { border-color: rgba(255,140,140,0.3); color: var(--danger); }
     .summary {
-      background: #f7f9fc;
+      background: linear-gradient(180deg, #f9fbff 0%, #f4f7fd 100%);
       border-radius: 12px;
       padding: 14px;
       border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
       max-height: none;
       min-height: 140px;
       overflow: auto;
@@ -254,6 +256,71 @@
       max-width: 100%;
       padding-bottom: 6px;
       display: block;
+    }
+    .action-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      margin: 6px 0 10px;
+    }
+    .action-card {
+      background: linear-gradient(160deg, #ffffff 0%, #f7f9ff 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      box-shadow: 0 12px 24px rgba(15,23,42,0.08);
+    }
+    .buttons.tight {
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .stats-pane {
+      margin-top: 12px;
+      background: linear-gradient(180deg, #f9fbff 0%, #eef3fb 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+    }
+    .stats-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+    .stats-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      box-shadow: 0 4px 12px rgba(31,42,61,0.05);
+    }
+    .stats-card h3 {
+      margin: 0 0 6px 0;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .stat-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+    .stat-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #f0f3f9;
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .stat-muted {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 6px;
     }
   </style>
 </head>
@@ -361,18 +428,24 @@
 
       <section class="panel">
         <h2>4) Review & download</h2>
-        <div class="buttons">
-          <button type="button" id="downloadCsv" disabled>Download sample CSV</button>
-          <button type="button" class="secondary" id="downloadJson" disabled>Download JSON summary</button>
-        </div>
-        <div style="margin-top:10px;">
-          <div class="buttons" style="margin-top:8px;">
-            <button type="button" id="genReport" class="secondary" disabled>Generate summary report</button>
-            <button type="button" id="downloadReport" disabled>Download summary report</button>
+        <div class="action-grid">
+          <div class="action-card">
+            <div class="buttons tight">
+              <button type="button" id="downloadCsv" disabled>Download sample CSV</button>
+              <button type="button" class="secondary" id="downloadJson" disabled>Download JSON summary</button>
+            </div>
+            <div class="hint">Sample and JSON update each time you generate.</div>
           </div>
-          <div class="hint" id="reportStatus">Generate after sampling.</div>
-          <div class="progress" id="reportProgress" style="display:none;"><div class="progress-bar"></div></div>
+          <div class="action-card">
+            <div class="buttons tight">
+              <button type="button" id="genReport" class="secondary" disabled>Generate summary report</button>
+              <button type="button" id="downloadReport" disabled>Download summary report</button>
+            </div>
+            <div class="hint" id="reportStatus">Generate after sampling.</div>
+            <div class="progress" id="reportProgress" style="display:none;"><div class="progress-bar"></div></div>
+          </div>
         </div>
+        <div class="stats-pane" id="statsPane">Run sampling to see summary statistics.</div>
         <div class="summary" id="summaryBox">Load data and run sampling to see results.</div>
       </section>
     </div>
@@ -696,6 +769,83 @@
       });
     }
 
+    function numericColumns(rows, columns) {
+      return columns.filter(col => rows.some(r => typeof r[col] === 'number' && Number.isFinite(r[col])));
+    }
+
+    function summarizeNumericColumns(rows, columns) {
+      const numeric = numericColumns(rows, columns).slice(0, 4);
+      const summaries = [];
+      for (const col of numeric) {
+        const vals = rows.map(r => r[col]).filter(v => typeof v === 'number' && Number.isFinite(v));
+        if (!vals.length) continue;
+        const sorted = vals.slice().sort((a, b) => a - b);
+        const min = sorted[0];
+        const max = sorted[sorted.length - 1];
+        const mean = vals.reduce((s, v) => s + v, 0) / vals.length;
+        const mid = Math.floor(sorted.length / 2);
+        const median = sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+        summaries.push({ column: col, count: vals.length, min, max, mean, median });
+      }
+      return summaries;
+    }
+
+    function renderStats() {
+      const pane = document.getElementById('statsPane');
+      if (!pane) return;
+      if (!state.summary) {
+        pane.textContent = 'Run sampling to see summary statistics.';
+        return;
+      }
+      const pop = {
+        rows: state.population.length,
+        numeric: summarizeNumericColumns(state.population, state.columns),
+      };
+      const sample = {
+        rows: state.sample.length,
+        numeric: summarizeNumericColumns(state.sample, state.columns),
+        share: state.population.length ? state.sample.length / state.population.length : 0,
+      };
+
+      const formatNumber = (n, digits = 2) => Number.isFinite(n) ? n.toLocaleString(undefined, { maximumFractionDigits: digits }) : '—';
+
+      const numericSection = (label, summary) => {
+        if (!summary.numeric.length) {
+          return `<div class="stat-muted">No numeric columns detected.</div>`;
+        }
+        return `
+          <div class="stat-row">
+            ${summary.numeric.map(stat => `
+              <span class="stat-pill">
+                ${stat.column}: μ=${formatNumber(stat.mean)} (p50=${formatNumber(stat.median)}, min=${formatNumber(stat.min)}, max=${formatNumber(stat.max)})
+              </span>
+            `).join('')}
+          </div>
+        `;
+      };
+
+      pane.innerHTML = `
+        <div class="stats-grid">
+          <div class="stats-card">
+            <h3>Population</h3>
+            <div class="stat-row">
+              <span class="stat-pill">Rows: ${pop.rows.toLocaleString()}</span>
+              <span class="stat-pill">Columns: ${state.columns.length}</span>
+            </div>
+            ${numericSection('Population', pop)}
+          </div>
+          <div class="stats-card">
+            <h3>Sample</h3>
+            <div class="stat-row">
+              <span class="stat-pill">Rows: ${sample.rows.toLocaleString()}</span>
+              <span class="stat-pill">Share of population: ${formatNumber(sample.share * 100)}%</span>
+            </div>
+            ${numericSection('Sample', sample)}
+          </div>
+        </div>
+        <div class="stat-muted">Up to four numeric columns are summarized. Statistics update when you regenerate the sample.</div>
+      `;
+    }
     function configSignature(cfg) {
       return JSON.stringify({
         method: cfg.method,
@@ -764,12 +914,13 @@
       }
       const rowsHtml = state.plan.allocations.map((a, idx) => {
         const label = Object.entries(a.stratum).map(([k, v]) => `${k}: ${v === null ? 'NULL' : v}`).join(', ') || '(all)';
+        const encodedKey = encodeURIComponent(a.key);
         return `
           <tr>
             <td>${idx + 1}</td>
             <td>${label}</td>
             <td>${a.population_count}</td>
-            <td><input type="number" min="0" max="${a.population_count}" value="${a.sample_count}" data-plan-key="${a.key}"></td>
+            <td><input type="number" min="0" max="${a.population_count}" value="${a.sample_count}" data-plan-key="${encodedKey}"></td>
           </tr>
         `;
       }).join('');
@@ -790,7 +941,8 @@
       `;
       planBox.querySelectorAll('input[type="number"]').forEach(input => {
         input.addEventListener('input', (e) => {
-          const key = e.target.getAttribute('data-plan-key');
+          const encoded = e.target.getAttribute('data-plan-key') || '';
+          const key = decodeURIComponent(encoded);
           const val = Math.max(0, parseInt(e.target.value || '0', 10));
           const alloc = state.plan.allocations.find(a => a.key === key);
           if (!alloc) return;
@@ -927,6 +1079,7 @@
         state.report = '';
         setReportStatus('Generate after sampling.');
         showReportProgress(false);
+        renderStats();
         return;
       }
       const s = state.summary;
@@ -947,6 +1100,7 @@
       downloadCsvBtn.disabled = false;
       downloadJsonBtn.disabled = false;
        genReportBtn.disabled = false;
+      renderStats();
     }
 
     function readConfigForm() {
@@ -1000,6 +1154,7 @@
       showReportProgress(false);
       sheetNameHint.textContent = '';
       setStatus('Reset. Load a new file.', 'muted');
+      renderStats();
     }
 
     planBtn.addEventListener('click', () => {
