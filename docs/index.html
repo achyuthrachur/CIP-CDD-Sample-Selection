@@ -6,7 +6,7 @@
   <title>CIP / CDD Sample Selection</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2"family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jstat@1.9.6/dist/jstat.min.js"></script>
   <style>
@@ -681,16 +681,16 @@
 
     function setStatus(msg, tone = 'muted') {
       statusEl.textContent = msg;
-      statusEl.style.color = tone === 'danger' " 'var(--danger)' : tone === 'success' " 'var(--success)' : 'var(--muted)';
+      statusEl.style.color = tone === 'danger' ? 'var(--danger)' : tone === 'success' ? 'var(--success)' : 'var(--muted)';
       updateStatusBar();
     }
 
     function setReportStatus(msg, tone = 'muted') {
       reportStatusEl.textContent = msg;
-      reportStatusEl.style.color = tone === 'danger' " 'var(--danger)' : tone === 'success' " 'var(--success)' : 'var(--muted)';
+      reportStatusEl.style.color = tone === 'danger' ? 'var(--danger)' : tone === 'success' ? 'var(--success)' : 'var(--muted)';
     }
     function showReportProgress(show) {
-      reportProgress.style.display = show " 'block' : 'none';
+      reportProgress.style.display = show ? 'block' : 'none';
     }
 
     function normalizeValue(value) {
@@ -709,7 +709,7 @@
         val /= 1024;
         i++;
       }
-      return `${val.toFixed(val >= 10 " 0 : 1)} ${units[i]}`;
+      return `${val.toFixed(val >= 10 ? 0 : 1)} ${units[i]}`;
     }
 
     function updateStatusBar() {
@@ -718,7 +718,7 @@
         statusBarEl.innerHTML = `<span class="pill badge badge-warn">No dataset loaded</span>`;
         return;
       }
-      const samplePart = state.sample.length " `<span class="pill badge badge-ok">Sample: ${state.sample.length.toLocaleString()}</span>` : '';
+      const samplePart = state.sample.length ? `<span class="pill badge badge-ok">Sample: ${state.sample.length.toLocaleString()}</span>` : '';
       statusBarEl.innerHTML = `
         <span class="pill badge badge-ok">Rows: ${state.population.length.toLocaleString()}</span>
         <span class="pill badge">File: ${state.fileName || 'N/A'}</span>
@@ -736,7 +736,7 @@
         return;
       }
       fileMetaEl.style.display = 'inline-flex';
-      const modified = meta.lastModified " new Date(meta.lastModified).toLocaleString() : 'n/a';
+      const modified = meta.lastModified ? new Date(meta.lastModified).toLocaleString() : 'n/a';
       fileMetaEl.textContent = `File: ${meta.name} - ${formatBytes(meta.size)} - Modified: ${modified}`;
     }
 
@@ -782,7 +782,7 @@
         return;
       }
       recentUploadsEl.innerHTML = state.recentUploads.map((r, idx) => {
-        const modified = r.lastModified " new Date(r.lastModified).toLocaleDateString() : 'n/a';
+        const modified = r.lastModified ? new Date(r.lastModified).toLocaleDateString() : 'n/a';
         return `<div class="recent-item" data-recent="${idx}" title="Use ${r.name} (${r.population.length.toLocaleString()} rows)">` +
           `${r.name} - ${r.population.length.toLocaleString()} rows - ${modified}</div>`;
       }).join('');
@@ -807,7 +807,7 @@
           planBtn.disabled = false;
           runBtn.disabled = true;
           setStatus(`Reused ${r.population.length.toLocaleString()} rows from ${r.name}.`, 'success');
-          const labelText = r.name " ` (${r.name})` : '';
+          const labelText = r.name ? ` (${r.name})` : '';
           sheetNameHint.textContent = `Using sheet: ${r.sheetName}${labelText}`;
         });
       });
@@ -821,7 +821,7 @@
         return;
       }
       columnsEl.innerHTML = state.columns.map(col => `<span class="pill">${col}</span>`).join('');
-      populationMetaEl.textContent = `${state.population.length.toLocaleString()} records loaded${state.sheetName " ` from sheet "${state.sheetName}"` : ''}.`;
+      populationMetaEl.textContent = `${state.population.length.toLocaleString()} records loaded${state.sheetName ? ` from sheet "${state.sheetName}"` : ''}.`;
       updateStatusBar();
     }
 
@@ -838,7 +838,7 @@
       stratifyOptionsEl.innerHTML = state.columns
         .filter(col => col.toLowerCase().includes(filter))
         .map(col => {
-          const checked = state.stratifySelected.includes(col) " 'checked' : '';
+          const checked = state.stratifySelected.includes(col) ? 'checked' : '';
           return `<label><input type="checkbox" name="stratify" value="${col}" ${checked}> ${col}</label>`;
         }).join('');
 
@@ -853,12 +853,12 @@
         return;
       }
       stratifyChipsEl.innerHTML = state.stratifySelected.map(val => `
-        <span class="chip">${val} <button type="button" aria-label="Remove ${val}" data-chip="${val}">-</button></span>
+        <span class="chip">${val} <button type="button" aria-label="Remove ${val}" data-chip="${val}">x</button></span>
       `).join('');
       stratifyChipsEl.querySelectorAll('button[data-chip]').forEach(btn => {
         btn.addEventListener('click', () => {
           const val = btn.getAttribute('data-chip');
-          const safeVal = (window.CSS && CSS.escape) " CSS.escape(val) : val.replace(/"/g, '\\"');
+          const safeVal = (window.CSS && CSS.escape) ? CSS.escape(val) : val.replace(/"/g, '\\"');
           const checkbox = stratifyOptionsEl.querySelector(`input[value="${safeVal}"]`);
           if (checkbox) checkbox.checked = false;
           setStratifySelection(val, false);
@@ -931,7 +931,7 @@
       setStatus(`Loaded ${json.length} rows from ${sheetName}.`, 'success');
       planBtn.disabled = false;
       runBtn.disabled = true;
-      const labelText = fileNameLabel " ` (${fileNameLabel})` : '';
+      const labelText = fileNameLabel ? ` (${fileNameLabel})` : '';
       sheetNameHint.textContent = `Using first sheet: ${sheetName}${labelText}`;
     }
 
@@ -962,7 +962,7 @@
       demoBtn.addEventListener('click', async () => {
         setStatus('Loading demo data...', 'muted');
         try {
-          const demoPath = new URL('./synthetic_onboarding_data.xlsx', window.location.href).toString() + '-ts=' + Date.now();
+          const demoPath = new URL('./synthetic_onboarding_data.xlsx', window.location.href).toString() + '?ts=' + Date.now();
           const resp = await fetch(demoPath, { cache: 'no-store' });
           if (!resp.ok) throw new Error(`Demo file not found (${resp.status})`);
           const buf = await resp.arrayBuffer();
@@ -1009,7 +1009,7 @@
       const n = arr.length;
       if (size <= 0) return [];
       if (size >= n) return arr.slice();
-      const offset = randomStart " Math.floor(rng() * Math.ceil(n / size)) : 0;
+      const offset = randomStart ? Math.floor(rng() * Math.ceil(n / size)) : 0;
       const indices = [];
       for (let k = 0; k < size; k++) {
         const base = Math.floor((k * n) / size);
@@ -1053,7 +1053,7 @@
         size = Math.ceil(N * (cfg.samplePercentage / 100));
       } else if (method === 'simple_random') {
         if (cfg.sampleSize == null && cfg.samplePercentage == null) throw new Error('Provide sampleSize or samplePercentage for simple_random.');
-        size = cfg.sampleSize != null " cfg.sampleSize : Math.ceil(N * (cfg.samplePercentage / 100));
+        size = cfg.sampleSize != null ? cfg.sampleSize : Math.ceil(N * (cfg.samplePercentage / 100));
       } else if (method === 'systematic') {
         if (cfg.sampleSize != null) {
           size = cfg.sampleSize;
@@ -1150,7 +1150,7 @@
       const lower = name.toLowerCase();
       const idLike = /(id|identifier|gci|guid|uuid|code)$/i.test(lower);
       const numericValues = values.filter(v => typeof v === 'number' && Number.isFinite(v));
-      const uniqueRatio = numericValues.length " new Set(numericValues).size / numericValues.length : 0;
+      const uniqueRatio = numericValues.length ? new Set(numericValues).size / numericValues.length : 0;
       const highCardinality = numericValues.length > 10 && uniqueRatio > 0.9;
       return idLike || highCardinality;
     }
@@ -1167,7 +1167,7 @@
         const max = sorted[sorted.length - 1];
         const mean = vals.reduce((s, v) => s + v, 0) / vals.length;
         const mid = Math.floor(sorted.length / 2);
-        const median = sorted.length % 2 === 0 " (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+        const median = sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
         summaries.push({ column: col, count: vals.length, min, max, mean, median });
       }
       return summaries.slice(0, 4);
@@ -1187,10 +1187,10 @@
       const sample = {
         rows: state.sample.length,
         numeric: summarizeNumericColumns(state.sample, state.columns),
-        share: state.population.length " state.sample.length / state.population.length : 0,
+        share: state.population.length ? state.sample.length / state.population.length : 0,
       };
 
-      const formatNumber = (n, digits = 2) => Number.isFinite(n) " n.toLocaleString(undefined, { maximumFractionDigits: digits }) : '-';
+      const formatNumber = (n, digits = 2) => Number.isFinite(n) ? n.toLocaleString(undefined, { maximumFractionDigits: digits }) : '-';
 
       const renderStatPills = (summary) => {
         if (!summary.numeric.length) {
@@ -1307,7 +1307,7 @@
       state.plan.plannedSize = total;
       const match = total === state.plan.desiredSize;
       planBox.innerHTML = `
-        <div class="badge pill ${match " 'badge-ok' : 'badge-warn'}">Planned total: ${total}</div>
+        <div class="badge pill ${match ? 'badge-ok' : 'badge-warn'}">Planned total: ${total}</div>
         <div class="badge pill">Calculated target: ${state.plan.desiredSize}</div>
         <div class="plan-scroll">
           <table class="table-zebra">
@@ -1317,7 +1317,7 @@
             <tbody>${rowsHtml}</tbody>
           </table>
         </div>
-        <div class="hint">${match " 'Adjust sample counts per stratum if needed, then click "Generate sample".' : 'Totals differ from target - adjust counts or proceed if override is intended.'}</div>
+        <div class="hint">${match ? 'Adjust sample counts per stratum if needed, then click "Generate sample".' : 'Totals differ from target - adjust counts or proceed if override is intended.'}</div>
       `;
 
       planBox.querySelectorAll('input[type="number"]').forEach(input => {
@@ -1336,7 +1336,7 @@
 
     function stratifiedSample(rows, cfg, rng, desiredSize, allocationOverrides = null) {
       const fields = cfg.stratifyFields;
-      const totalSize = desiredSize "" resolveSampleSize(rows.length, cfg);
+      const totalSize = desiredSize ?? resolveSampleSize(rows.length, cfg);
       if (totalSize <= 0) return { sample: [], allocations: [] };
 
       const groups = {};
@@ -1383,9 +1383,9 @@
           confidence: cfg.confidence,
           margin: cfg.margin,
           expected_error_rate: cfg.expectedErrorRate,
-          sample_size_parameter: cfg.sampleSize "" null,
-          sample_percentage_parameter: cfg.samplePercentage "" null,
-          systematic_step_parameter: cfg.systematicStep "" null,
+          sample_size_parameter: cfg.sampleSize ?? null,
+          sample_percentage_parameter: cfg.samplePercentage ?? null,
+          systematic_step_parameter: cfg.systematicStep ?? null,
           seed: cfg.seed,
           systematic_random_start: cfg.systematicRandomStart,
           planned_sample_size: plannedSize,
@@ -1404,28 +1404,28 @@
           distribution: distribution(sample, cfg.stratifyFields),
         },
         allocations,
-        sample_ids: cfg.idColumn " sample.map(r => r[cfg.idColumn]) : undefined,
+        sample_ids: cfg.idColumn ? sample.map(r => r[cfg.idColumn]) : undefined,
       };
     }
 
     function sampleData(population, cfg, plan) {
-      const desiredSize = plan " plan.allocations.reduce((s, a) => s + a.sample_count, 0) : resolveSampleSize(population.length, cfg);
+      const desiredSize = plan ? plan.allocations.reduce((s, a) => s + a.sample_count, 0) : resolveSampleSize(population.length, cfg);
       if (desiredSize <= 0 && population.length > 0) throw new Error('Calculated sample size is 0. Adjust parameters.');
 
-      const rng = rngFactory(cfg.seed "" 42);
+      const rng = rngFactory(cfg.seed ?? 42);
       let sample = [];
       let allocations = [];
       if (cfg.stratifyFields.length) {
-        const overrideMap = plan " Object.fromEntries(plan.allocations.map(a => [a.key, a.sample_count])) : null;
+        const overrideMap = plan ? Object.fromEntries(plan.allocations.map(a => [a.key, a.sample_count])) : null;
         ({ sample, allocations } = stratifiedSample(population, cfg, rng, desiredSize, overrideMap));
       } else {
-        const take = plan " Math.min(desiredSize, population.length) : desiredSize;
+        const take = plan ? Math.min(desiredSize, population.length) : desiredSize;
         if (cfg.method === 'systematic') {
           sample = systematicSample(population, take, cfg.systematicRandomStart, rng);
         } else {
           sample = randomSample(population, take, rng);
         }
-        allocations = plan " [
+        allocations = plan ? [
           {
             stratum: {},
             population_count: population.length,
@@ -1443,7 +1443,7 @@
       const escape = (v) => {
         if (v === null || v === undefined) return '';
         const s = String(v).replace(/"/g, '""');
-        return /[",\n]/.test(s) " `"${s}"` : s;
+        return /[",\n]/.test(s) ? `"${s}"` : s;
       };
       const header = columns.join(',');
       const lines = rows.map(r => columns.map(c => escape(r[c])).join(','));
@@ -1499,18 +1499,18 @@
       const seed = parseInt(form.seed.value, 10);
       const randomStart = form.randomStart.value === 'yes';
       const idRaw = (idColumnInput.value || '').trim();
-      const idColumn = state.columns.includes(idRaw) " idRaw : null;
+      const idColumn = state.columns.includes(idRaw) ? idRaw : null;
 
       return {
         method,
         confidence,
         margin,
         expectedErrorRate: expectedError,
-        sampleSize: sampleSizeVal === '' " null : parseInt(sampleSizeVal, 10),
-        samplePercentage: samplePctVal === '' " null : parseFloat(samplePctVal),
-        systematicStep: stepVal === '' " null : parseInt(stepVal, 10),
+        sampleSize: sampleSizeVal === '' ? null : parseInt(sampleSizeVal, 10),
+        samplePercentage: samplePctVal === '' ? null : parseFloat(samplePctVal),
+        systematicStep: stepVal === '' ? null : parseInt(stepVal, 10),
         stratifyFields,
-        seed: Number.isFinite(seed) " seed : 42,
+        seed: Number.isFinite(seed) ? seed : 42,
         systematicRandomStart: randomStart,
         idColumn,
       };
