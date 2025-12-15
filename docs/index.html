@@ -72,13 +72,18 @@
         "main side"
         "plan side"
         "stats review";
-      align-items: start;
+      align-items: stretch;
+      grid-auto-rows: minmax(min-content, 1fr);
     }
     .grid-main { grid-area: main; }
     .grid-side { grid-area: side; }
     .grid-stats { grid-area: stats; }
     .grid-plan { grid-area: plan; }
     .grid-review { grid-area: review; }
+    .grid-stats,
+    .grid-review {
+      height: 100%;
+    }
     @media (max-width: 1100px) {
       .grid {
         grid-template-columns: 1fr;
@@ -94,7 +99,7 @@
       background: linear-gradient(180deg, #ffffff 0%, #f7f9ff 100%);
       border: 1px solid var(--border);
       border-radius: 16px;
-      padding: 18px;
+      padding: 18px 18px 24px;
       box-shadow: var(--shadow);
       overflow: hidden;
       height: auto;
