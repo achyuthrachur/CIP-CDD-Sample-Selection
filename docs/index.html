@@ -591,7 +591,7 @@
 
       <section class="panel">
         <h2>3) Plan allocation</h2>
-        <div id="planBox" class="hint">Load data and click “Plan sample” to see per-stratum counts.</div>
+        <div id="planBox" class="hint">Load data and click "Plan sample" to see per-stratum counts.</div>
       </section>
 
       <section class="panel">
@@ -737,7 +737,7 @@
       }
       fileMetaEl.style.display = 'inline-flex';
       const modified = meta.lastModified " new Date(meta.lastModified).toLocaleString() : 'n/a';
-      fileMetaEl.textContent = `File: ${meta.name} • ${formatBytes(meta.size)} • Modified: ${modified}`;
+      fileMetaEl.textContent = `File: ${meta.name} - ${formatBytes(meta.size)} - Modified: ${modified}`;
     }
 
     function addRecentUpload(entry) {
@@ -784,7 +784,7 @@
       recentUploadsEl.innerHTML = state.recentUploads.map((r, idx) => {
         const modified = r.lastModified " new Date(r.lastModified).toLocaleDateString() : 'n/a';
         return `<div class="recent-item" data-recent="${idx}" title="Use ${r.name} (${r.population.length.toLocaleString()} rows)">` +
-          `${r.name} • ${r.population.length.toLocaleString()} rows • ${modified}</div>`;
+          `${r.name} - ${r.population.length.toLocaleString()} rows - ${modified}</div>`;
       }).join('');
       recentUploadsEl.querySelectorAll('.recent-item').forEach(item => {
         item.addEventListener('click', (e) => {
@@ -853,7 +853,7 @@
         return;
       }
       stratifyChipsEl.innerHTML = state.stratifySelected.map(val => `
-        <span class="chip">${val} <button type="button" aria-label="Remove ${val}" data-chip="${val}">×</button></span>
+        <span class="chip">${val} <button type="button" aria-label="Remove ${val}" data-chip="${val}">-</button></span>
       `).join('');
       stratifyChipsEl.querySelectorAll('button[data-chip]').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -962,7 +962,7 @@
       demoBtn.addEventListener('click', async () => {
         setStatus('Loading demo data...', 'muted');
         try {
-          const demoPath = new URL('./synthetic_onboarding_data.xlsx', window.location.href).toString() + '?ts=' + Date.now();
+          const demoPath = new URL('./synthetic_onboarding_data.xlsx', window.location.href).toString() + '-ts=' + Date.now();
           const resp = await fetch(demoPath, { cache: 'no-store' });
           if (!resp.ok) throw new Error(`Demo file not found (${resp.status})`);
           const buf = await resp.arrayBuffer();
@@ -1135,7 +1135,7 @@
       }
       const total = rows.length;
       return Object.entries(counts).map(([key, count]) => {
-        const values = JSON.parse(key).map(v => v === MISSING_VALUE " null : v);
+      const values = JSON.parse(key).map(v => v === MISSING_VALUE ? null : v);
         const stratum = {};
         fields.forEach((f, i) => stratum[f] = values[i]);
         return { stratum, count, share: count / total };
@@ -1190,7 +1190,7 @@
         share: state.population.length " state.sample.length / state.population.length : 0,
       };
 
-      const formatNumber = (n, digits = 2) => Number.isFinite(n) " n.toLocaleString(undefined, { maximumFractionDigits: digits }) : '—';
+      const formatNumber = (n, digits = 2) => Number.isFinite(n) " n.toLocaleString(undefined, { maximumFractionDigits: digits }) : '-';
 
       const renderStatPills = (summary) => {
         if (!summary.numeric.length) {
@@ -1198,7 +1198,7 @@
         }
         return summary.numeric.map(stat => `
           <span class="stat-pill">
-            <strong>${stat.column}</strong> · mean=${formatNumber(stat.mean)} · p50=${formatNumber(stat.median)} · min=${formatNumber(stat.min)} · max=${formatNumber(stat.max)}
+            <strong>${stat.column}</strong> - mean=${formatNumber(stat.mean)} - p50=${formatNumber(stat.median)} - min=${formatNumber(stat.min)} - max=${formatNumber(stat.max)}
           </span>
         `).join('');
       };
@@ -1265,7 +1265,7 @@
       const counts = Object.fromEntries(Object.entries(groups).map(([k, arr]) => [k, arr.length]));
       const allocationsMap = proportionalAllocation(counts, desiredSize);
       const allocations = Object.entries(groups).map(([k, arr]) => {
-        const values = JSON.parse(k).map(v => v === MISSING_VALUE " null : v);
+      const values = JSON.parse(k).map(v => v === MISSING_VALUE ? null : v);
         const stratum = {};
         cfg.stratifyFields.forEach((f, i) => stratum[f] = values[i]);
         return {
@@ -1288,11 +1288,11 @@
 
     function renderPlan() {
       if (!state.plan) {
-        planBox.innerHTML = 'Load data and click “Plan sample” to see per-stratum counts.';
+        planBox.innerHTML = 'Load data and click "Plan sample" to see per-stratum counts.';
         return;
       }
       const rowsHtml = state.plan.allocations.map((a, idx) => {
-        const label = Object.entries(a.stratum).map(([k, v]) => `${k}: ${v === null " 'NULL' : v}`).join(', ') || '(all)';
+        const label = Object.entries(a.stratum).map(([k, v]) => `${k}: ${v === null ? 'NULL' : v}`).join(', ') || '(all)';
         const encodedKey = encodeURIComponent(a.key);
         return `
           <tr>
@@ -1317,7 +1317,7 @@
             <tbody>${rowsHtml}</tbody>
           </table>
         </div>
-        <div class="hint">${match " 'Adjust sample counts per stratum if needed, then click "Generate sample".' : 'Totals differ from target — adjust counts or proceed if override is intended.'}</div>
+        <div class="hint">${match " 'Adjust sample counts per stratum if needed, then click "Generate sample".' : 'Totals differ from target - adjust counts or proceed if override is intended.'}</div>
       `;
 
       planBox.querySelectorAll('input[type="number"]').forEach(input => {
@@ -1360,7 +1360,7 @@
         } else {
           chosen = randomSample(groupRows, alloc, rng);
         }
-        const values = JSON.parse(key).map(v => v === MISSING_VALUE " null : v);
+      const values = JSON.parse(key).map(v => v === MISSING_VALUE ? null : v);
         const stratum = {};
         fields.forEach((f, i) => stratum[f] = values[i]);
         allocationSummary.push({
@@ -1474,7 +1474,7 @@
         lines.push('');
         lines.push('Per-stratum sample counts:');
         s.allocations.forEach(a => {
-          const desc = Object.entries(a.stratum || {}).map(([k, v]) => `${k}=${v === null " 'NULL' : v}`).join(', ');
+          const desc = Object.entries(a.stratum || {}).map(([k, v]) => `${k}=${v === null ? 'NULL' : v}`).join(', ');
           lines.push(`- ${desc}: ${a.sample_count} of ${a.population_count} (${(a.share_of_sample * 100).toFixed(1)}% of sample)`);
         });
       }
