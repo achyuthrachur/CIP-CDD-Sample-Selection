@@ -596,22 +596,25 @@
             </div>
           </div>
 
-          <div class="row">
-            <div>
-              <label for="sampleSize">Sample size (optional) <span class="help-icon" title="Override to a fixed size. Used by simple random / systematic, or as override.">"</span></label>
-              <input type="number" id="sampleSize" name="sampleSize" placeholder="auto">
-              <div class="hint">Use for simple random/systematic, or override.</div>
-            </div>
-            <div>
-              <label for="samplePct">Sample % (optional) <span class="help-icon" title="Percentage of population to sample.">"</span></label>
-              <input type="number" id="samplePct" name="samplePct" placeholder="e.g. 10">
-              <div class="hint">Use with percentage/simple_random/systematic.</div>
-            </div>
-            <div>
-              <label for="systematicStep">Systematic step (optional) <span class="help-icon" title="Interval for systematic sampling. Leave blank for auto.">"</span></label>
-              <input type="number" id="systematicStep" name="systematicStep" placeholder="auto">
-            </div>
+        <div class="row">
+          <div>
+            <label for="sampleSize">Sample size (optional) <span class="help-icon" title="Override to a fixed size. Used by simple random / systematic, or as override.">"</span></label>
+            <input type="number" id="sampleSize" name="sampleSize" placeholder="auto">
+            <div class="hint">Use for simple random/systematic, or override.</div>
           </div>
+          <div>
+            <label for="samplePct">Sample % (optional) <span class="help-icon" title="Percentage of population to sample.">"</span></label>
+            <input type="number" id="samplePct" name="samplePct" placeholder="e.g. 10">
+            <div class="hint">Use with percentage/simple_random/systematic.</div>
+          </div>
+          <div>
+            <label for="systematicStep">Systematic step (optional) <span class="help-icon" title="Interval for systematic sampling. Leave blank for auto.">"</span></label>
+            <input type="number" id="systematicStep" name="systematicStep" placeholder="auto">
+          </div>
+        </div>
+
+          <label for="overrideJustification">Override justification (if you set any overrides)</label>
+          <textarea id="overrideJustification" name="overrideJustification" rows="2" placeholder="Explain why overrides are used."></textarea>
 
           <label for="stratifySelect">Stratify by</label>
           <input class="typeahead" list="stratifyOptionsList" id="stratifySelect" name="stratifySelect" placeholder="Type to add stratify field" aria-label="Type to add stratify field" disabled>
@@ -734,6 +737,7 @@
     const summaryBox = document.getElementById('summaryBox');
     const promptTextEl = document.getElementById('promptText');
     const downloadPromptBtn = document.getElementById('downloadPrompt');
+    const overrideJustificationEl = document.getElementById('overrideJustification');
     const sheetNameHint = document.getElementById('sheetNameHint');
     const genReportBtn = document.getElementById('genReport');
     const downloadReportBtn = document.getElementById('downloadReport');
@@ -1504,6 +1508,7 @@
           seed: cfg.seed,
           systematic_random_start: cfg.systematicRandomStart,
           planned_sample_size: plannedSize,
+          override_justification: cfg.overrideJustification || null,
         },
         stratify_fields: cfg.stratifyFields,
         source: {
@@ -1630,6 +1635,7 @@
       const randomStart = form.randomStart.value === 'yes';
       const idRaw = (idColumnInput.value || '').trim();
       const idColumn = state.columns.includes(idRaw) ? idRaw : null;
+      const overrideJustification = overrideJustificationEl ? (overrideJustificationEl.value || '').trim() : '';
 
       return {
         method,
@@ -1643,6 +1649,7 @@
         seed: Number.isFinite(seed) ? seed : 42,
         systematicRandomStart: randomStart,
         idColumn,
+        overrideJustification,
       };
     }
 
