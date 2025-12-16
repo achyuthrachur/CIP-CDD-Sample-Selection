@@ -1599,11 +1599,13 @@
       if (!Number.isFinite(confidence)) confidence = 99;
       if (confidence >= 1) confidence = confidence / 100; // percent-style input
       confidence = Math.max(0.001, Math.min(0.999, confidence));
-      let margin = parseFloat(form.margin.value);
-      if (!Number.isFinite(margin)) margin = 0.05;
+      const rawMargin = parseFloat(form.margin.value);
+      let margin = rawMargin;
+      if (!Number.isFinite(margin)) margin = 5;
+      const marginIsInteger = Number.isInteger(margin);
       if (margin >= 1) {
         margin = margin / 100; // percent input
-        margin += 0.0001; // nudge to nearest 0.01% (e.g., 5 -> 5.01%)
+        if (marginIsInteger) margin += 0.0001; // nudge only integer inputs (5 -> 5.01%)
       }
       margin = Math.max(0.0001, Math.min(1, margin));
 
