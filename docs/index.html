@@ -1597,16 +1597,16 @@
       const method = form.method.value;
       let confidence = parseFloat(form.confidence.value);
       if (!Number.isFinite(confidence)) confidence = 99;
-      if (confidence > 1) confidence = confidence / 100; // percent input
+      if (confidence >= 1) confidence = confidence / 100; // percent-style input
       confidence = Math.max(0.001, Math.min(0.999, confidence));
       let margin = parseFloat(form.margin.value);
       if (!Number.isFinite(margin)) margin = 0.05;
-      if (margin > 1) margin = margin / 100; // percent input
+      if (margin >= 1) margin = margin / 100; // percent input
       margin = Math.max(0.0001, Math.min(1, margin));
 
       let expectedError = parseFloat(form.expectedError.value);
       if (!Number.isFinite(expectedError)) expectedError = 1;
-      if (expectedError > 1) expectedError = expectedError / 100; // percent input
+      if (expectedError >= 1) expectedError = expectedError / 100; // percent input
       expectedError = Math.max(0, Math.min(1, expectedError));
       const sampleSizeVal = form.sampleSize.value.trim();
       const samplePctVal = form.samplePct.value.trim();
