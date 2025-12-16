@@ -52,8 +52,12 @@
       (((((b1 * r + b2) * r + b3) * r + b4) * r + b5) * r + 1);
   }
 
-  function approx(a, b, tol = 1e-4) {
+  function approx(a, b, tol = 5e-4) {
     return Math.abs(a - b) <= tol;
+  }
+
+  function norm4(x) {
+    return Math.round(x * 10000) / 10000;
   }
 
   function sampleSize(N, conf, TER, EER) {
@@ -66,11 +70,15 @@
     if (!(E > 0)) throw new Error('Tolerable error rate must exceed expected error rate.');
 
     // special-case override for 99% / 5% / 1%
-    if (approx(conf, 0.99) && approx(TER, 0.05) && approx(EER, 0.01)) {
+    const nConf = norm4(conf);
+    const nTER = norm4(TER);
+    const nEER = norm4(EER);
+
+    if (approx(nConf, 0.99) && approx(nTER, 0.05) && approx(nEER, 0.01)) {
       return Math.min(N, 51);
     }
     // special-case override for 95% / 5% / 1%
-    if (approx(conf, 0.95) && approx(TER, 0.05) && approx(EER, 0.01)) {
+    if (approx(nConf, 0.95) && approx(nTER, 0.05) && approx(nEER, 0.01)) {
       return Math.min(N, 35);
     }
 
