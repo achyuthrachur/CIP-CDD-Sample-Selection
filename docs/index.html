@@ -613,8 +613,10 @@
           </div>
         </div>
 
-          <label for="overrideJustification">Override justification (if you set any overrides)</label>
-          <textarea id="overrideJustification" name="overrideJustification" rows="2" placeholder="Explain why overrides are used."></textarea>
+          <div id="overrideJustificationWrapper" style="display:none;">
+            <label for="overrideJustification">Override justification (required when using overrides)</label>
+            <textarea id="overrideJustification" name="overrideJustification" rows="2" placeholder="Explain why overrides are used."></textarea>
+          </div>
 
           <label for="stratifySelect">Stratify by</label>
           <input class="typeahead" list="stratifyOptionsList" id="stratifySelect" name="stratifySelect" placeholder="Type to add stratify field" aria-label="Type to add stratify field" disabled>
@@ -679,6 +681,7 @@
           </div>
         </div>
         <div class="summary" id="summaryBox">Load data and run sampling to see results.</div>
+        <div id="overrideNote" class="hint"></div>
         <div style="margin-top:12px;">
           <h3>Download Summary Prompt</h3>
           <textarea id="promptText" style="width:100%;min-height:200px;white-space:pre-wrap;" readonly></textarea>
@@ -718,6 +721,8 @@
       recentUploads: [],
       stratifySelected: [],
       fileMeta: null,
+      overrideJustification: '',
+      lastConfig: null,
     };
     // Serverless report endpoint (Netlify). Replace with your deployed URL.
     const REPORT_FUNCTION_URL = 'https://frolicking-dusk-5c6419.netlify.app/.netlify/functions/report';
@@ -735,9 +740,11 @@
     const populationOverrideInput = document.getElementById('populationOverride');
     const statusEl = document.getElementById('status');
     const summaryBox = document.getElementById('summaryBox');
+    const overrideNoteEl = document.getElementById('overrideNote');
     const promptTextEl = document.getElementById('promptText');
     const downloadPromptBtn = document.getElementById('downloadPrompt');
     const overrideJustificationEl = document.getElementById('overrideJustification');
+    const overrideJustificationWrapper = document.getElementById('overrideJustificationWrapper');
     const sheetNameHint = document.getElementById('sheetNameHint');
     const genReportBtn = document.getElementById('genReport');
     const downloadReportBtn = document.getElementById('downloadReport');
@@ -1246,6 +1253,7 @@
         pane.textContent = 'Run sampling to see summary statistics.';
         return;
       }
+      const cfg = state.lastConfig || readConfigForm();
       const pop = {
         rows: state.population.length,
         numeric: summarizeNumericColumns(state.population, state.columns),
@@ -1338,6 +1346,13 @@
         ` : ''}
         <div class="stat-muted">Identifier-like numeric fields (e.g., IDs/GCI) are excluded. Up to four numeric columns are summarized. Stats update when you regenerate the sample.</div>
       `;
+      if (overrideNoteEl) {
+        const justification = cfg.overrideJustification || '';
+        const overrideActive = hasOverrides(cfg);
+        if (overrideActive && justification) {
+          overrideNoteEl.textContent = `Override justification: ${justification}`;
+        }
+      }
     }
     function configSignature(cfg) {
       return JSON.stringify({
@@ -1573,6 +1588,7 @@
     function renderSummary() {
       if (!state.summary) {
         summaryBox.textContent = 'Load data and run sampling to see results.';
+        if (overrideNoteEl) overrideNoteEl.textContent = '';
         downloadCsvBtn.disabled = true;
         downloadJsonBtn.disabled = true;
         genReportBtn.disabled = true;
@@ -1584,6 +1600,7 @@
         updateStatusBar();
         return;
       }
+      const cfg = state.lastConfig || readConfigForm();
       const s = state.summary;
       const lines = [];
       lines.push(`Selected ${s.sample.size} of ${s.population.size} using "${s.methodology.method}". Planned size: ${s.methodology.planned_sample_size}.`);
@@ -1599,6 +1616,11 @@
         });
       }
       summaryBox.textContent = lines.join('\n');
+      if (overrideNoteEl) {
+        const justification = cfg.overrideJustification || '';
+        const overrideActive = hasOverrides(cfg);
+        overrideNoteEl.textContent = overrideActive && justification ? `Override justification: ${justification}` : '';
+      }
       downloadCsvBtn.disabled = false;
       downloadJsonBtn.disabled = false;
        genReportBtn.disabled = false;
@@ -1651,6 +1673,43 @@
         idColumn,
         overrideJustification,
       };
+    }
+
+    function hasOverrides(cfg) {
+      return Boolean(
+        (cfg.sampleSize != null) ||
+        (cfg.samplePercentage != null) ||
+        (cfg.systematicStep != null) ||
+        (populationOverrideInput && populationOverrideInput.value)
+      );
+    }
+
+    function ensureJustification(cfg, messageTarget) {
+      if (hasOverrides(cfg) && !cfg.overrideJustification) {
+        const msg = 'Override justification is required when overrides are used.';
+        if (messageTarget) messageTarget.textContent = msg;
+        setStatus(msg, 'danger');
+        if (overrideJustificationEl) overrideJustificationEl.focus();
+        return false;
+      }
+      return true;
+    }
+
+    function updateJustificationVisibility() {
+      const cfg = readConfigForm();
+      const show = hasOverrides(cfg);
+      if (overrideJustificationWrapper) {
+        overrideJustificationWrapper.style.display = show ? 'block' : 'none';
+      }
+      if (!show && overrideNoteEl) {
+        overrideNoteEl.textContent = '';
+      }
+    }
+
+    function autosizeTextarea(el) {
+      if (!el) return;
+      el.style.height = 'auto';
+      el.style.height = `${el.scrollHeight}px`;
     }
 
     function resetAll() {
@@ -1709,14 +1768,15 @@
         return;
       }
       try {
-        const cfg = readConfigForm();
-        const fieldsKey = JSON.stringify(cfg.stratifyFields || []);
-        if (!state.plan || state.plan.populationSize !== state.population.length || JSON.stringify(state.plan.stratifyFields || []) !== fieldsKey || state.plan.signature !== configSignature(cfg)) {
-          const plan = computePlan(state.population, cfg);
-          plan.populationSize = state.population.length;
-          state.plan = plan;
-          renderPlan();
-        }
+      const cfg = readConfigForm();
+      const fieldsKey = JSON.stringify(cfg.stratifyFields || []);
+      state.lastConfig = cfg;
+      if (!state.plan || state.plan.populationSize !== state.population.length || JSON.stringify(state.plan.stratifyFields || []) !== fieldsKey || state.plan.signature !== configSignature(cfg)) {
+        const plan = computePlan(state.population, cfg);
+        plan.populationSize = state.population.length;
+        state.plan = plan;
+        renderPlan();
+      }
         const { sample, summary } = sampleData(state.population, cfg, state.plan);
         state.sample = sample;
         state.summary = summary;
@@ -1751,8 +1811,20 @@
 
     resetBtn.addEventListener('click', resetAll);
 
+    // Show/hide justification when override fields change
+    ['sampleSize','samplePct','systematicStep','populationOverride'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', updateJustificationVisibility);
+    });
+    if (overrideJustificationEl) {
+      overrideJustificationEl.addEventListener('input', () => autosizeTextarea(overrideJustificationEl));
+      autosizeTextarea(overrideJustificationEl);
+    }
+
     downloadCsvBtn.addEventListener('click', () => {
       if (!state.sample.length) return;
+      const cfg = state.lastConfig || readConfigForm();
+      if (!ensureJustification(cfg, statusEl)) return;
       const csv = '\ufeff' + toCsv(state.sample, state.columns); // BOM to help Excel detect UTF-8
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
@@ -1765,6 +1837,8 @@
 
     downloadJsonBtn.addEventListener('click', () => {
       if (!state.summary) return;
+      const cfg = state.lastConfig || readConfigForm();
+      if (!ensureJustification(cfg, statusEl)) return;
       const blob = new Blob([JSON.stringify(state.summary, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -1795,6 +1869,8 @@
     }
 
     genReportBtn.addEventListener('click', async () => {
+      const cfg = state.lastConfig || readConfigForm();
+      if (!ensureJustification(cfg, statusEl)) return;
       if (!state.summary) {
         setReportStatus('Run sampling first.', 'danger');
         return;
@@ -1818,6 +1894,8 @@
 
     downloadReportBtn.addEventListener('click', () => {
       if (!state.report) return;
+      const cfg = state.lastConfig || readConfigForm();
+      if (!ensureJustification(cfg, statusEl)) return;
       const blob = new Blob([state.report], { type: 'text/plain;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -1859,6 +1937,8 @@ Formatting requirements:
     }
     if (downloadPromptBtn) {
       downloadPromptBtn.addEventListener('click', () => {
+        const cfg = state.lastConfig || readConfigForm();
+        if (!ensureJustification(cfg, statusEl)) return;
         const blob = new Blob([SUMMARY_PROMPT], { type: 'text/plain;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
