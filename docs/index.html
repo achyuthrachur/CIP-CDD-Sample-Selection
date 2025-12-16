@@ -676,6 +676,13 @@
           </div>
         </div>
         <div class="summary" id="summaryBox">Load data and run sampling to see results.</div>
+        <div style="margin-top:12px;">
+          <h3>Download Summary Prompt</h3>
+          <textarea id="promptText" style="width:100%;min-height:200px;white-space:pre-wrap;" readonly></textarea>
+          <div class="buttons tight" style="margin-top:8px;">
+            <button type="button" id="downloadPrompt">Download Summary Prompt</button>
+          </div>
+        </div>
       </section>
     </div>
   </main>
@@ -725,6 +732,8 @@
     const populationOverrideInput = document.getElementById('populationOverride');
     const statusEl = document.getElementById('status');
     const summaryBox = document.getElementById('summaryBox');
+    const promptTextEl = document.getElementById('promptText');
+    const downloadPromptBtn = document.getElementById('downloadPrompt');
     const sheetNameHint = document.getElementById('sheetNameHint');
     const genReportBtn = document.getElementById('genReport');
     const downloadReportBtn = document.getElementById('downloadReport');
@@ -1810,6 +1819,48 @@
       a.click();
       URL.revokeObjectURL(url);
     });
+
+    // Prompt hardwired text and download
+    const SUMMARY_PROMPT = `You are an AML Audit documentation assistant. Using ONLY the information contained in the JSON pasted below (do not assume anything not explicitly present), write a narrative sampling summary suitable for inclusion in an AML audit workpaper.
+
+Goals:
+1) Describe the POPULATION: what it is, total population size (N), source file/sheet if provided, key characteristics, and the distribution of any stratification field(s) (counts and % of N).
+2) Describe the SAMPLE: planned sample size (n), how it was selected, the sample allocation by stratum (counts and % of n), and where applicable note that specific sample IDs are retained for traceability (do not list all IDs unless n ≤ 20).
+3) Explain the RATIONALE for EACH sampling parameter individually, in audit terms and plain English. At minimum address:
+   - sampling_method
+   - confidence_level
+   - margin_of_error
+   - expected_error_rate
+   - planned_sample_size (and how it relates to confidence/margin/expected error and finite population)
+   - stratify_fields (why stratify on these for AML risk/regulatory coverage)
+   - allocation approach implied by the stratum sizes vs allocations (e.g., proportional)
+   - systematic_random_start (why it helps reduce selection bias)
+   - random_seed (reproducibility/audit trail)
+   - any parameters that are null (what that implies and that no override was used)
+4) Provide a brief “AML audit context” paragraph tying the sampling design to typical AML objectives (e.g., coverage across jurisdictions, consistency with risk-based testing, defensibility of selection).
+5) Include a short limitations/assumptions section that is explicitly grounded in what the JSON does/does not say (e.g., if error definition, time period, or ordering of records is not provided, state that it is not specified).
+
+Formatting requirements:
+- Write in complete sentences and a professional audit memo tone.
+- Use clear headings (Population, Sample, Sampling Parameters and Rationale, AML Audit Context, Limitations).
+- Where helpful, include simple calculations (percentages, proportionality checks). Show numbers; avoid overly technical formulas.
+- Do not cite external standards or regulators unless the JSON mentions them.
+- Do not fabricate details about AML program, customer types, transaction volumes, or time periods unless explicitly stated in the JSON.`;
+
+    if (promptTextEl) {
+      promptTextEl.value = SUMMARY_PROMPT;
+    }
+    if (downloadPromptBtn) {
+      downloadPromptBtn.addEventListener('click', () => {
+        const blob = new Blob([SUMMARY_PROMPT], { type: 'text/plain;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'aml_sampling_summary_prompt.txt';
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+    }
 
     setupDropzone();
     renderRecentUploads();
