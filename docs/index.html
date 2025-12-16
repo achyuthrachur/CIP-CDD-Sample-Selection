@@ -1084,13 +1084,13 @@
       }
     }
 
-    function auditSampleSizeBinomial(N, confidence, tolerableRate, allowedDeviations = 1) {
+    function auditSampleSizeBinomial(N, confidence, tolerableRate, expectedRate = 0.01) {
       if (N <= 0) return 0;
       if (!(tolerableRate > 0 && tolerableRate < 1)) throw new Error('Tolerable error rate must be in (0,1).');
       const risk = Math.max(1e-6, Math.min(0.5, 1 - confidence)); // acceptable risk of overreliance
-      const allowed = Math.max(0, Math.floor(allowedDeviations));
       const p = tolerableRate;
       for (let n = 1; n <= N; n++) {
+        const allowed = Math.max(0, Math.floor(expectedRate * n)); // expected drives allowed deviations
         const cdf = jStat.binomial.cdf(allowed, n, p);
         if (cdf <= risk) return n;
       }
@@ -1104,7 +1104,7 @@
       const overrideSize = Number.isFinite(cfg.sampleSize) ? Math.max(0, Math.min(N, Math.floor(cfg.sampleSize))) : null;
       if (overrideSize !== null) return overrideSize;
       if (method === 'statistical') {
-        size = auditSampleSizeBinomial(N, cfg.confidence, cfg.margin, 1);
+        size = auditSampleSizeBinomial(N, cfg.confidence, cfg.margin, cfg.expectedErrorRate);
       } else if (method === 'percentage') {
         if (cfg.samplePercentage == null) throw new Error('samplePercentage is required for percentage sampling.');
         size = Math.ceil(N * (cfg.samplePercentage / 100));
@@ -1117,7 +1117,7 @@
         } else if (cfg.samplePercentage != null) {
           size = Math.ceil(N * (cfg.samplePercentage / 100));
         } else {
-          size = auditSampleSizeBinomial(N, cfg.confidence, cfg.margin, 1);
+          size = auditSampleSizeBinomial(N, cfg.confidence, cfg.margin, cfg.expectedErrorRate);
         }
       } else {
         throw new Error(`Unsupported method ${method}`);
