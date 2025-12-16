@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jstat@1.9.6/dist/jstat.min.js"></script>
+  <script src="./sample_size.js"></script>
   <style>
     :root {
       --bg: #f4f6fb;
@@ -560,6 +561,13 @@
         <div id="recentUploads" class="recent-list"></div>
         <div id="columns" style="margin-top:12px;"></div>
         <div id="populationMeta" class="hint"></div>
+        <div class="row">
+          <div>
+            <label for="populationOverride">Population size override (optional)</label>
+            <input type="number" id="populationOverride" name="populationOverride" placeholder="auto" min="1">
+            <div class="hint">Use to test sample sizing; overrides detected population size.</div>
+          </div>
+        </div>
       </section>
 
       <section class="panel grid-side">
@@ -714,6 +722,7 @@
     const idColumnInput = document.getElementById('idColumnInput');
     const idColumnOptions = document.getElementById('idColumnOptions');
     const populationMetaEl = document.getElementById('populationMeta');
+    const populationOverrideInput = document.getElementById('populationOverride');
     const statusEl = document.getElementById('status');
     const summaryBox = document.getElementById('summaryBox');
     const sheetNameHint = document.getElementById('sheetNameHint');
@@ -1084,43 +1093,6 @@
       }
     }
 
-    function clopperPearsonHalfWidth(n, p, confidence) {
-      const alpha = 1 - confidence;
-      const x = Math.min(n, Math.max(0, Math.round(p * n)));
-      if (n <= 0) return Infinity;
-      let lower, upper;
-      if (x <= 0) {
-        lower = 0;
-        upper = 1 - Math.pow(alpha / 2, 1 / n);
-      } else if (x >= n) {
-        lower = Math.pow(alpha / 2, 1 / n);
-        upper = 1;
-      } else {
-        lower = jStat.beta.inv(alpha / 2, x, n - x + 1);
-        upper = jStat.beta.inv(1 - alpha / 2, x + 1, n - x);
-      }
-      return (upper - lower) / 2;
-    }
-
-    function cpSampleSize(N, confidence, expectedRate, tolerableRate) {
-      if (N <= 0) return 0;
-      if (!(tolerableRate > 0 && tolerableRate < 1)) throw new Error('Tolerable error rate must be in (0,1).');
-      if (!(expectedRate >= 0 && expectedRate < 1)) throw new Error('Expected error rate must be in [0,1).');
-      const halfWidthTarget = tolerableRate - expectedRate;
-      if (!(halfWidthTarget > 0)) throw new Error('Tolerable error rate must exceed expected error rate.');
-      const maxSearch = Math.min(200000, Math.max(N * 2, 1000));
-      let n0 = maxSearch;
-      for (let n = 1; n <= maxSearch; n++) {
-        const hw = clopperPearsonHalfWidth(n, expectedRate, confidence);
-        if (hw <= halfWidthTarget) {
-          n0 = n;
-          break;
-        }
-      }
-      const nFpc = Math.ceil(n0 / (1 + (n0 - 1) / N));
-      return Math.max(1, Math.min(N, nFpc));
-    }
-
     function resolveSampleSize(N, cfg) {
       if (N <= 0) return 0;
       const method = cfg.method;
@@ -1128,7 +1100,7 @@
       const overrideSize = Number.isFinite(cfg.sampleSize) ? Math.max(0, Math.min(N, Math.floor(cfg.sampleSize))) : null;
       if (overrideSize !== null) return overrideSize;
       if (method === 'statistical') {
-        size = cpSampleSize(N, cfg.confidence, cfg.expectedErrorRate, cfg.margin);
+        size = sampleSize(N, cfg.confidence, cfg.margin, cfg.expectedErrorRate);
       } else if (method === 'percentage') {
         if (cfg.samplePercentage == null) throw new Error('samplePercentage is required for percentage sampling.');
         size = Math.ceil(N * (cfg.samplePercentage / 100));
@@ -1141,7 +1113,7 @@
         } else if (cfg.samplePercentage != null) {
           size = Math.ceil(N * (cfg.samplePercentage / 100));
         } else {
-          size = cpSampleSize(N, cfg.confidence, cfg.expectedErrorRate, cfg.margin);
+          size = sampleSize(N, cfg.confidence, cfg.margin, cfg.expectedErrorRate);
         }
       } else {
         throw new Error(`Unsupported method ${method}`);
@@ -1368,7 +1340,10 @@
     }
 
     function computePlan(population, cfg) {
-      const desiredSize = resolveSampleSize(population.length, cfg);
+      const popSize = state.population.length;
+      const overridePop = populationOverrideInput && populationOverrideInput.value ? parseInt(populationOverrideInput.value, 10) : null;
+      const effectivePop = Number.isFinite(overridePop) && overridePop > 0 ? overridePop : popSize;
+      const desiredSize = resolveSampleSize(effectivePop, cfg);
       if (desiredSize <= 0) throw new Error('Calculated sample size is 0. Adjust parameters.');
       if (!cfg.stratifyFields.length) {
         return {
@@ -1376,11 +1351,11 @@
             {
               key: '__all__',
               stratum: {},
-              population_count: population.length,
-              sample_count: Math.min(population.length, desiredSize),
+              population_count: effectivePop,
+              sample_count: Math.min(effectivePop, desiredSize),
             },
           ],
-          plannedSize: Math.min(population.length, desiredSize),
+          plannedSize: Math.min(effectivePop, desiredSize),
           desiredSize,
           stratifyFields: [],
         };
@@ -1465,7 +1440,9 @@
 
     function stratifiedSample(rows, cfg, rng, desiredSize, allocationOverrides = null) {
       const fields = cfg.stratifyFields;
-      const totalSize = desiredSize ?? resolveSampleSize(rows.length, cfg);
+      const overridePop = populationOverrideInput && populationOverrideInput.value ? parseInt(populationOverrideInput.value, 10) : null;
+      const effectivePop = Number.isFinite(overridePop) && overridePop > 0 ? overridePop : rows.length;
+      const totalSize = desiredSize ?? resolveSampleSize(effectivePop, cfg);
       if (totalSize <= 0) return { sample: [], allocations: [] };
 
       const groups = {};
