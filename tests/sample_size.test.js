@@ -12,6 +12,7 @@ const cases = [
   { N: 50, conf: 0.99, TER: 0.05, EER: 0.01, expected: 50 },
   { N: 200, conf: 0.99, TER: 0.05, EER: 0.01, expected: 51 },
   { N: 10000, conf: 0.99, TER: 0.05, EER: 0.01, expected: 51 },
+  { N: 10000, conf: 0.95, TER: 0.05, EER: 0.01, expected: 35 },
 ];
 
 cases.forEach(({ N, conf, TER, EER, expected }) => {

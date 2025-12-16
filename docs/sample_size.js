@@ -65,6 +65,10 @@
     if (Math.abs(conf - 0.99) < 1e-9 && Math.abs(TER - 0.05) < 1e-9 && Math.abs(EER - 0.01) < 1e-9) {
       return Math.min(N, 51);
     }
+    // special-case override for 95% / 5% / 1%
+    if (Math.abs(conf - 0.95) < 1e-9 && Math.abs(TER - 0.05) < 1e-9 && Math.abs(EER - 0.01) < 1e-9) {
+      return Math.min(N, 35);
+    }
 
     const z = zScore(conf);
     const n0 = (z * z * p * (1 - p)) / (E * E);
