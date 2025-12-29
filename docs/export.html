@@ -105,19 +105,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     const E = TER - EER;
     if (!(E > 0)) throw new Error('Tolerable error rate must exceed expected error rate.');
 
-    // special-case override for 99% / 5% / 1%
-    const nConf = norm4(conf);
-    const nTER = norm4(TER);
-    const nEER = norm4(EER);
-
-    if (approx(nConf, 0.99) && approx(nTER, 0.05) && approx(nEER, 0.01)) {
-      return Math.min(N, 51);
-    }
-    // special-case override for 95% / 5% / 1%
-    if (approx(nConf, 0.95) && approx(nTER, 0.05) && approx(nEER, 0.01)) {
-      return Math.min(N, 35);
-    }
-
     const z = zScore(conf);
     const n0 = (z * z * p * (1 - p)) / (E * E);
     const nCalc = Math.ceil((N * n0) / (N + n0 - 1));
