@@ -24593,52 +24593,52 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
 
     /* CSS Custom Properties - Light Theme (default) */
     :root {
-      --bg-primary: #f0f4ff;
+      --bg-primary: #f0f5ff;
       --bg-secondary: #ffffff;
-      --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+      --bg-gradient: linear-gradient(135deg, #2563eb 0%, #3b82f6 50%, #60a5fa 100%);
       --glass-bg: rgba(255, 255, 255, 0.7);
       --glass-border: rgba(255, 255, 255, 0.5);
-      --glass-shadow: 0 8px 32px rgba(102, 126, 234, 0.15);
-      --text-primary: #1a1a2e;
-      --text-secondary: #4a5568;
-      --text-muted: #718096;
-      --accent-primary: #667eea;
-      --accent-secondary: #764ba2;
-      --accent-tertiary: #f093fb;
+      --glass-shadow: 0 8px 32px rgba(37, 99, 235, 0.15);
+      --text-primary: #111111;
+      --text-secondary: #374151;
+      --text-muted: #6b7280;
+      --accent-primary: #2563eb;
+      --accent-secondary: #3b82f6;
+      --accent-tertiary: #60a5fa;
       --accent-success: #10b981;
       --accent-warning: #f59e0b;
       --accent-danger: #ef4444;
-      --border-color: rgba(102, 126, 234, 0.2);
+      --border-color: rgba(37, 99, 235, 0.2);
       --input-bg: rgba(255, 255, 255, 0.9);
-      --card-hover: rgba(102, 126, 234, 0.08);
-      --particle-color: rgba(102, 126, 234, 0.6);
-      --scrollbar-track: rgba(102, 126, 234, 0.1);
-      --scrollbar-thumb: rgba(102, 126, 234, 0.4);
-      --glow-color: rgba(102, 126, 234, 0.5);
+      --card-hover: rgba(37, 99, 235, 0.08);
+      --particle-color: rgba(37, 99, 235, 0.6);
+      --scrollbar-track: rgba(37, 99, 235, 0.1);
+      --scrollbar-thumb: rgba(37, 99, 235, 0.4);
+      --glow-color: rgba(37, 99, 235, 0.5);
       --shimmer: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
     }
 
     /* Dark Theme */
     [data-theme="dark"] {
-      --bg-primary: #0a0a1a;
-      --bg-secondary: #12122a;
-      --bg-gradient: linear-gradient(135deg, #1a1a3e 0%, #2d1b4e 50%, #1a1a3e 100%);
-      --glass-bg: rgba(26, 26, 62, 0.8);
-      --glass-border: rgba(102, 126, 234, 0.3);
+      --bg-primary: #0a1628;
+      --bg-secondary: #0f1e36;
+      --bg-gradient: linear-gradient(135deg, #1e3a5f 0%, #1e40af 50%, #1e3a5f 100%);
+      --glass-bg: rgba(15, 30, 54, 0.8);
+      --glass-border: rgba(59, 130, 246, 0.3);
       --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
       --text-primary: #e2e8f0;
       --text-secondary: #a0aec0;
       --text-muted: #718096;
-      --accent-primary: #818cf8;
-      --accent-secondary: #a78bfa;
-      --accent-tertiary: #f0abfc;
-      --border-color: rgba(129, 140, 248, 0.3);
-      --input-bg: rgba(26, 26, 62, 0.9);
-      --card-hover: rgba(129, 140, 248, 0.12);
-      --particle-color: rgba(129, 140, 248, 0.5);
-      --scrollbar-track: rgba(129, 140, 248, 0.1);
-      --scrollbar-thumb: rgba(129, 140, 248, 0.5);
-      --glow-color: rgba(129, 140, 248, 0.6);
+      --accent-primary: #60a5fa;
+      --accent-secondary: #3b82f6;
+      --accent-tertiary: #93c5fd;
+      --border-color: rgba(59, 130, 246, 0.3);
+      --input-bg: rgba(15, 30, 54, 0.9);
+      --card-hover: rgba(59, 130, 246, 0.12);
+      --particle-color: rgba(59, 130, 246, 0.5);
+      --scrollbar-track: rgba(59, 130, 246, 0.1);
+      --scrollbar-thumb: rgba(59, 130, 246, 0.5);
+      --glow-color: rgba(59, 130, 246, 0.6);
       --shimmer: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
     }
 
@@ -24997,7 +24997,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
 
     .panel:hover {
       transform: translateY(-4px);
-      box-shadow: 0 20px 50px rgba(102, 126, 234, 0.2);
+      box-shadow: 0 20px 50px rgba(37, 99, 235, 0.2);
       border-color: var(--accent-primary);
     }
 
@@ -25031,13 +25031,13 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       font-size: 0.85rem;
       font-weight: 700;
       margin-right: 8px;
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
       animation: pulse 2s infinite;
     }
 
     @keyframes pulse {
-      0%, 100% { box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); }
-      50% { box-shadow: 0 4px 20px rgba(102, 126, 234, 0.6); }
+      0%, 100% { box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+      50% { box-shadow: 0 4px 20px rgba(37, 99, 235, 0.6); }
     }
 
     /* Dropzone */
@@ -25078,7 +25078,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
     .dropzone.dragging {
       border-color: var(--accent-primary);
       transform: scale(1.01);
-      box-shadow: 0 8px 30px rgba(102, 126, 234, 0.2);
+      box-shadow: 0 8px 30px rgba(37, 99, 235, 0.2);
     }
 
     .dropzone-icon {
@@ -25114,7 +25114,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
 
     .pill:hover {
       transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.2);
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.2);
     }
 
     .badge {
@@ -25175,7 +25175,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
     textarea:focus {
       outline: none;
       border-color: var(--accent-primary);
-      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15), 0 8px 24px rgba(102, 126, 234, 0.1);
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15), 0 8px 24px rgba(37, 99, 235, 0.1);
       transform: translateY(-1px);
     }
 
@@ -25259,7 +25259,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       color: white;
       background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
       transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.35);
+      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.35);
       overflow: hidden;
       font-family: inherit;
     }
@@ -25281,7 +25281,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
 
     button:hover:not(:disabled) {
       transform: translateY(-3px) scale(1.02);
-      box-shadow: 0 16px 40px rgba(102, 126, 234, 0.45);
+      box-shadow: 0 16px 40px rgba(37, 99, 235, 0.45);
     }
 
     button:active:not(:disabled) {
@@ -25298,7 +25298,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
     button.secondary:hover:not(:disabled) {
       border-color: var(--accent-primary);
       background: var(--card-hover);
-      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.15);
     }
 
     button:disabled {
@@ -25328,7 +25328,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
 
     .summary:hover {
       border-color: var(--accent-primary);
-      box-shadow: 0 12px 36px rgba(102, 126, 234, 0.15);
+      box-shadow: 0 12px 36px rgba(37, 99, 235, 0.15);
     }
 
     /* Progress Bar */
@@ -25398,7 +25398,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
     }
 
     .table-zebra tbody tr:nth-child(odd) {
-      background: rgba(102, 126, 234, 0.03);
+      background: rgba(37, 99, 235, 0.03);
     }
 
     td input[type="number"] {
@@ -25419,7 +25419,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
 
     .stats-pane:hover {
       transform: translateY(-2px);
-      box-shadow: 0 16px 40px rgba(102, 126, 234, 0.12);
+      box-shadow: 0 16px 40px rgba(37, 99, 235, 0.12);
     }
 
     .stats-grid {
@@ -25438,7 +25438,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
 
     .stats-card:hover {
       transform: translateY(-3px);
-      box-shadow: 0 12px 30px rgba(102, 126, 234, 0.15);
+      box-shadow: 0 12px 30px rgba(37, 99, 235, 0.15);
       border-color: var(--accent-primary);
     }
 
@@ -25505,7 +25505,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
 
     .action-card:hover {
       transform: translateY(-3px);
-      box-shadow: 0 12px 30px rgba(102, 126, 234, 0.15);
+      box-shadow: 0 12px 30px rgba(37, 99, 235, 0.15);
       border-color: var(--accent-primary);
     }
 
@@ -25564,7 +25564,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       gap: 10px;
       align-items: center;
       padding: 12px 18px;
-      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(59, 130, 246, 0.1));
       border: 1px solid var(--border-color);
       border-radius: 16px;
       font-size: 0.9rem;
@@ -25603,7 +25603,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
     .recent-item:hover {
       transform: translateY(-3px) scale(1.02);
       border-color: var(--accent-primary);
-      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
+      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.2);
     }
 
     /* Plan Box */
@@ -25645,7 +25645,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
     textarea:focus-visible,
     .dropzone:focus-visible {
       outline: none;
-      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.3);
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.3);
     }
 
     /* Hints */
@@ -26111,14 +26111,6 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
             </div>
             <div class="hint">Sample and JSON update each time you generate.</div>
           </div>
-          <div class="action-card">
-            <div class="buttons tight">
-              <button type="button" id="genReport" class="secondary" disabled>&#x1F4DD; Generate summary report</button>
-              <button type="button" id="downloadReport" disabled>&#x2B07; Download summary report</button>
-            </div>
-            <div class="hint" id="reportStatus" aria-live="polite">Generate after sampling.</div>
-            <div class="progress" id="reportProgress" style="display:none;"><div class="progress-bar"></div></div>
-          </div>
         </div>
         <div class="summary" id="summaryBox">Load data and run sampling to see results.</div>
         <div id="overrideNote" class="hint"></div>
@@ -26219,7 +26211,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
 
     // Confetti celebration
     function celebrate() {
-      const colors = ['#667eea', '#764ba2', '#f093fb', '#10b981', '#f59e0b', '#ef4444'];
+      const colors = ['#2563eb', '#3b82f6', '#60a5fa', '#10b981', '#f59e0b', '#ef4444'];
 
       for (let i = 0; i < 50; i++) {
         const confetti = document.createElement('div');
@@ -26354,10 +26346,6 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
     const overrideJustificationEl = document.getElementById('overrideJustification');
     const overrideJustificationWrapper = document.getElementById('overrideJustificationWrapper');
     const sheetNameHint = document.getElementById('sheetNameHint');
-    const genReportBtn = document.getElementById('genReport');
-    const downloadReportBtn = document.getElementById('downloadReport');
-    const reportStatusEl = document.getElementById('reportStatus');
-    const reportProgress = document.getElementById('reportProgress');
     const fileMetaEl = document.getElementById('fileMeta');
     const recentUploadsEl = document.getElementById('recentUploads');
     const statusBarEl = document.getElementById('statusBar');
@@ -26373,14 +26361,6 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       statusEl.textContent = msg;
       statusEl.style.color = tone === 'danger' ? 'var(--danger)' : tone === 'success' ? 'var(--success)' : 'var(--muted)';
       updateStatusBar();
-    }
-
-    function setReportStatus(msg, tone = 'muted') {
-      reportStatusEl.textContent = msg;
-      reportStatusEl.style.color = tone === 'danger' ? 'var(--danger)' : tone === 'success' ? 'var(--success)' : 'var(--muted)';
-    }
-    function showReportProgress(show) {
-      reportProgress.style.display = show ? 'block' : 'none';
     }
 
     function normalizeValue(value) {
@@ -26419,11 +26399,13 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
         return;
       }
       const samplePart = state.sample.length ? `<span class="pill badge badge-ok">Sample: ${state.sample.length.toLocaleString()}</span>` : '';
+      const stratifyPart = state.stratifySelected.length ? `<span class="pill badge">Stratify: ${state.stratifySelected.join(', ')}</span>` : '';
+      const strataCountPart = state.plan && state.plan.allocations ? `<span class="pill badge">Strata: ${state.plan.allocations.length}</span>` : '';
       statusBarEl.innerHTML = `
-        <span class="pill badge badge-ok">Rows: ${state.population.length.toLocaleString()}</span>
-        <span class="pill badge">File: ${state.fileName || 'N/A'}</span>
-        <span class="pill badge">Sheet: ${state.sheetName || 'N/A'}</span>
+        <span class="pill badge badge-ok">Population: ${state.population.length.toLocaleString()}</span>
         ${samplePart}
+        ${stratifyPart}
+        ${strataCountPart}
       `;
     }
 
@@ -27244,11 +27226,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
         if (overrideNoteEl) overrideNoteEl.textContent = '';
         downloadCsvBtn.disabled = true;
         downloadJsonBtn.disabled = true;
-        genReportBtn.disabled = true;
-        downloadReportBtn.disabled = true;
         state.report = '';
-        setReportStatus('Generate after sampling.');
-        showReportProgress(false);
         renderStats();
         updateStatusBar();
         return;
@@ -27276,7 +27254,6 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       }
       downloadCsvBtn.disabled = false;
       downloadJsonBtn.disabled = false;
-       genReportBtn.disabled = false;
       renderStats();
       updateStatusBar();
     }
@@ -27382,10 +27359,6 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       renderPlan();
       planBtn.disabled = true;
       runBtn.disabled = true;
-      genReportBtn.disabled = true;
-      downloadReportBtn.disabled = true;
-      setReportStatus('Generate after sampling.');
-      showReportProgress(false);
       sheetNameHint.textContent = '';
       setStatus('Reset. Load a new file.', 'muted');
       renderStats();
@@ -27554,48 +27527,6 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       lines.push('- Generated locally for offline use; no external APIs are called.');
       return lines.join('\n');
     }
-
-    async function generateReport(summary) {
-      if (!summary) throw new Error('Run sampling first.');
-      return generateLocalReport(summary);
-    }
-
-    genReportBtn.addEventListener('click', async () => {
-      const cfg = state.lastConfig || readConfigForm();
-      if (!ensureJustification(cfg, statusEl)) return;
-      if (!state.summary) {
-        setReportStatus('Run sampling first.', 'danger');
-        return;
-      }
-      try {
-        setReportStatus('Generating local report...', 'muted');
-        showReportProgress(true);
-        genReportBtn.disabled = true;
-        const text = await generateReport(state.summary);
-        state.report = text;
-        downloadReportBtn.disabled = !text;
-        setReportStatus('Local report ready. Click download.', 'success');
-      } catch (err) {
-        console.error(err);
-        setReportStatus(err.message || 'Failed to generate report.', 'danger');
-      } finally {
-        genReportBtn.disabled = false;
-        showReportProgress(false);
-      }
-    });
-
-    downloadReportBtn.addEventListener('click', () => {
-      if (!state.report) return;
-      const cfg = state.lastConfig || readConfigForm();
-      if (!ensureJustification(cfg, statusEl)) return;
-      const blob = new Blob([state.report], { type: 'text/plain;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'sampling_summary.txt';
-      a.click();
-      URL.revokeObjectURL(url);
-    });
 
     // Prompt hardwired text and download
     const SUMMARY_PROMPT = `You are an AML Audit documentation assistant. Using ONLY the information contained in the JSON pasted below (do not assume anything not explicitly present), write a narrative sampling summary suitable for inclusion in an AML audit workpaper.
