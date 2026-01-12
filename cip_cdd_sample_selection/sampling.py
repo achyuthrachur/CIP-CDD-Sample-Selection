@@ -40,7 +40,8 @@ def z_score(confidence: float) -> float:
     if confidence <= 0 or confidence >= 1:
         raise ValueError("Confidence must be between 0 and 1 (exclusive).")
     alpha = 1 - confidence
-    return NormalDist().inv_cdf(1 - alpha / 2)
+    # One-sided upper bound (z_{1-alpha}) to keep deviation rate under TER.
+    return NormalDist().inv_cdf(1 - alpha)
 
 
 def calculate_statistical_sample_size(
@@ -52,12 +53,15 @@ def calculate_statistical_sample_size(
     if population_size <= 0:
         return 0
     if margin <= 0 or margin >= 1:
-        raise ValueError("Margin of error must be in (0,1).")
-    if expected_error_rate < 0 or expected_error_rate > 1:
-        raise ValueError("Expected error rate must be in [0,1].")
+        raise ValueError("Tolerable error rate must be in (0,1).")
+    if expected_error_rate < 0 or expected_error_rate >= 1:
+        raise ValueError("Expected error rate must be in [0,1).")
+    if margin <= expected_error_rate:
+        raise ValueError("Tolerable error rate must exceed expected error rate.")
     z = z_score(confidence)
     p = expected_error_rate
-    n0 = (z**2) * p * (1 - p) / (margin**2)
+    allowable_gap = margin - expected_error_rate
+    n0 = (z**2) * p * (1 - p) / (allowable_gap**2)
     n = n0 / (1 + ((n0 - 1) / population_size))
     return math.ceil(n)
 

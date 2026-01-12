@@ -1,6 +1,6 @@
 # CIP CDD Sample Selection
 
-Command-line sampler for CIP/CDD testing. It ingests an Excel file, lets you pick a sampling methodology (default statistical with 99% confidence, 5% margin of error, 1% expected error rate), stratify by one or more columns, and produces:
+Command-line sampler for CIP/CDD testing. It ingests an Excel file, lets you pick a sampling methodology (default statistical with 99% confidence, 5% tolerable error rate, 1% expected error rate), stratify by one or more columns, and produces:
 - A sampled file (CSV).
 - A JSON summary with methodology, parameters, and population vs. sample distributions for report-ready rationale.
 
@@ -34,7 +34,7 @@ python -m cip_cdd_sample_selection ^
 - `--sheet`: Optional sheet name (defaults to first sheet).
 - `--stratify`: Comma-separated column names to stratify the sample.
 - `--method`: `statistical` (default), `simple_random`, `percentage`, or `systematic`.
-- `--confidence`, `--margin`, `--expected-error-rate`: Used for `statistical` sample sizing (defaults 0.99/0.05/0.01).
+- `--confidence`, `--margin`, `--expected-error-rate`: Used for `statistical` sample sizing (defaults 0.99/0.05/0.01). `--margin` is the tolerable error rate (TER).
 - `--sample-size`: Fixed sample size (use with `simple_random` or `systematic`, optional with others).
 - `--sample-percentage`: Percentage of population to sample (e.g., `10` for 10%).
 - `--systematic-step`: Interval for systematic sampling (defaults to a computed interval).
@@ -86,5 +86,5 @@ git push -u origin main
 
 ## Limitations and assumptions
 - Designed for Excel inputs with a header row.
-- Statistical sizing uses a standard proportion formula with finite population correction; values are capped at the population size.
+- Statistical sizing uses a standard one-sided proportion bound with finite population correction; values are capped at the population size.
 - Large samples will make the JSON sizable; adjust as needed.

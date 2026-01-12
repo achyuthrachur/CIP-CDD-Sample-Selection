@@ -1,18 +1,18 @@
-// Attribute sample size calculator (Wald CI + FPC with special-case override)
+// Attribute sample size calculator (one-sided upper bound + FPC with special-case override)
 // API: sampleSize(N, conf, TER, EER)
 // TER/EER are decimals (e.g., 0.04), conf in (0,1)
 
 (function(root) {
   function zScore(conf) {
     const alpha = 1 - conf;
-    if (Math.abs(conf - 0.99) < 1e-9) return 2.58; // per spec
-    // fall back to precise normal quantile (two-sided)
+    if (Math.abs(conf - 0.99) < 1e-9) return 2.326; // per spec (one-sided)
+    // fall back to precise normal quantile (one-sided)
     if (typeof jStat !== 'undefined' && jStat.normal && jStat.normal.inv) {
-      return jStat.normal.inv(1 - alpha / 2, 0, 1);
+      return jStat.normal.inv(1 - alpha, 0, 1);
     }
     // basic approximation if jStat not available in tests
     // Abramowitz-Stegun approximation
-    const p = 1 - alpha / 2;
+    const p = 1 - alpha;
     const a1 = -39.6968302866538,
       a2 = 220.946098424521,
       a3 = -275.928510446969;

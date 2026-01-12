@@ -71,8 +71,14 @@ def sample(
         help="Sampling methodology: statistical, simple_random, percentage, or systematic.",
     ),
     confidence: float = typer.Option(0.99, help="Confidence level for statistical sizing (default 0.99)."),
-    margin: float = typer.Option(0.05, help="Margin of error for statistical sizing (default 0.05)."),
-    expected_error_rate: float = typer.Option(0.01, help="Expected error rate for statistical sizing (default 0.01)."),
+    margin: float = typer.Option(
+        0.05,
+        help="Tolerable error rate (TER) for statistical sizing (default 0.05).",
+    ),
+    expected_error_rate: float = typer.Option(
+        0.01,
+        help="Expected error rate (EER) for statistical sizing (default 0.01).",
+    ),
     sample_size: Optional[int] = typer.Option(None, help="Fixed sample size (used by simple_random/systematic or overrides)."),
     sample_percentage: Optional[float] = typer.Option(None, help="Percentage of population to sample."),
     systematic_step: Optional[int] = typer.Option(None, help="Step/interval for systematic sampling."),
