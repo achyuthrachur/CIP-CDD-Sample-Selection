@@ -1388,13 +1388,12 @@
               stratum: {},
               population_count: effectivePop,
               sample_count: Math.min(effectivePop, desiredSize),
-              auto_defaulted_from_zero: false,
             },
           ],
           plannedSize: Math.min(effectivePop, desiredSize),
           desiredSize,
           stratifyFields: [],
-          autoDefaultedStrata: [],
+          coverageOverrides: [],
         };
       }
       const groups = {};
@@ -1406,33 +1405,17 @@
       const counts = Object.fromEntries(Object.entries(groups).map(([k, arr]) => [k, arr.length]));
       const allocationsMap = proportionalAllocation(counts, desiredSize);
 
-      // Track strata that were auto-defaulted from 0 to 1
-      const autoDefaultedStrata = [];
-
       const allocations = Object.entries(groups).map(([k, arr]) => {
         const values = JSON.parse(k).map(v => v === MISSING_VALUE ? null : v);
         const stratum = {};
         cfg.stratifyFields.forEach((f, i) => stratum[f] = values[i]);
-        let sampleCount = allocationsMap[k] || 0;
-        let autoDefaulted = false;
-
-        // Auto-default strata with 0 samples to 1 (if population > 0)
-        if (sampleCount === 0 && arr.length > 0) {
-          sampleCount = 1;
-          autoDefaulted = true;
-          autoDefaultedStrata.push({
-            stratum: { ...stratum },
-            original_sample_count: 0,
-            defaulted_to: 1,
-          });
-        }
+        const sampleCount = allocationsMap[k] || 0;
 
         return {
           key: k,
           stratum,
           population_count: arr.length,
           sample_count: sampleCount,
-          auto_defaulted_from_zero: autoDefaulted,
         };
       });
       const plannedSize = allocations.reduce((s, a) => s + a.sample_count, 0);
@@ -1443,7 +1426,7 @@
         stratifyFields: cfg.stratifyFields.slice(),
         populationSize: population.length,
         signature: configSignature(cfg),
-        autoDefaultedStrata,
+        coverageOverrides: [],
       };
     }
 
@@ -1452,14 +1435,21 @@
         planBox.innerHTML = 'Load data and click "Plan sample" to see per-stratum counts.';
         return;
       }
+      // Count strata with zero samples that have population > 0
+      const zeroStrata = state.plan.allocations.filter(a => a.sample_count === 0 && a.population_count > 0);
+      const zeroStrataCount = zeroStrata.length;
+      const coverageOverrideCount = state.plan.coverageOverrides ? state.plan.coverageOverrides.length : 0;
+
       const rowsHtml = state.plan.allocations.map((a, idx) => {
         const label = Object.entries(a.stratum).map(([k, v]) => `${k}: ${v === null ? 'NULL' : v}`).join(', ') || '(all)';
         const encodedKey = encodeURIComponent(a.key);
-        const autoDefaultedTag = a.auto_defaulted_from_zero ? ' <span style="color:var(--accent-2);font-size:11px;" title="Auto-defaulted from 0 to 1">(auto +1)</span>' : '';
+        const isOverridden = state.plan.coverageOverrides && state.plan.coverageOverrides.some(o => JSON.stringify(o.stratum) === JSON.stringify(a.stratum));
+        const overrideTag = isOverridden ? ' <span style="color:var(--accent-2);font-size:11px;" title="Coverage override applied">(+1 override)</span>' : '';
+        const isZero = a.sample_count === 0 && a.population_count > 0;
         return `
-          <tr${a.auto_defaulted_from_zero ? ' style="background:rgba(245,158,11,0.08);"' : ''}>
+          <tr${isOverridden ? ' style="background:rgba(245,158,11,0.08);"' : (isZero ? ' style="background:rgba(220,38,38,0.06);"' : '')}>
             <td>${idx + 1}</td>
-            <td>${label}${autoDefaultedTag}</td>
+            <td>${label}${overrideTag}</td>
             <td>${a.population_count}</td>
             <td><input type="number" min="0" max="${a.population_count}" value="${a.sample_count}" data-plan-key="${encodedKey}"></td>
           </tr>
@@ -1467,13 +1457,16 @@
       }).join('');
       const total = state.plan.allocations.reduce((s, a) => s + a.sample_count, 0);
       state.plan.plannedSize = total;
-      const autoDefaultedCount = state.plan.autoDefaultedStrata ? state.plan.autoDefaultedStrata.length : 0;
       const match = total === state.plan.desiredSize;
-      const autoDefaultNote = autoDefaultedCount > 0 ? `<div class="badge pill badge-warn">${autoDefaultedCount} stratum/strata auto-defaulted from 0 to 1</div>` : '';
+      const zeroStrataNote = zeroStrataCount > 0 ? `<div class="badge pill badge-warn">${zeroStrataCount} stratum/strata with 0 samples</div>` : '';
+      const coverageOverrideNote = coverageOverrideCount > 0 ? `<div class="badge pill badge-ok">${coverageOverrideCount} coverage override(s) applied</div>` : '';
+      const addCoverageBtn = zeroStrataCount > 0 ? `<button type="button" id="addCoverageBtn" class="secondary" style="margin-left:8px;">Add +1 to zero strata</button>` : '';
       planBox.innerHTML = `
         <div class="badge pill ${match ? 'badge-ok' : 'badge-warn'}">Planned total: ${total}</div>
         <div class="badge pill">Calculated target: ${state.plan.desiredSize}</div>
-        ${autoDefaultNote}
+        ${zeroStrataNote}
+        ${coverageOverrideNote}
+        ${addCoverageBtn}
         <div class="plan-scroll">
           <table class="table-zebra">
             <thead>
@@ -1482,8 +1475,29 @@
             <tbody>${rowsHtml}</tbody>
           </table>
         </div>
-        <div class="hint">${match ? 'Adjust sample counts per stratum if needed, then click "Generate sample".' : 'Totals differ from target - adjust counts or proceed if override is intended.'}${autoDefaultedCount > 0 ? ' Strata with 0 allocation were auto-defaulted to 1. You can manually set them back to 0 if needed.' : ''}</div>
+        <div class="hint">${match ? 'Adjust sample counts per stratum if needed, then click "Generate sample".' : 'Totals differ from target - adjust counts or proceed if override is intended.'}${zeroStrataCount > 0 ? ' Click "Add +1 to zero strata" to ensure coverage across all observed strata.' : ''}</div>
       `;
+
+      // Add event listener for coverage button
+      const addCoverageBtnEl = document.getElementById('addCoverageBtn');
+      if (addCoverageBtnEl) {
+        addCoverageBtnEl.addEventListener('click', () => {
+          const overrides = [];
+          for (const alloc of state.plan.allocations) {
+            if (alloc.sample_count === 0 && alloc.population_count > 0) {
+              overrides.push({
+                stratum: { ...alloc.stratum },
+                original_sample_count: 0,
+                adjusted_to: 1,
+                justification: 'Override made to allow for sampling coverage across all observed strata in the population',
+              });
+              alloc.sample_count = 1;
+            }
+          }
+          state.plan.coverageOverrides = (state.plan.coverageOverrides || []).concat(overrides);
+          renderPlan();
+        });
+      }
 
       planBox.querySelectorAll('input[type="number"]').forEach(input => {
         input.addEventListener('input', (e) => {
@@ -1543,7 +1557,7 @@
     }
 
     function buildSummary(population, sample, allocations, cfg, plannedSize, plan) {
-      const autoDefaultedStrata = plan && plan.autoDefaultedStrata ? plan.autoDefaultedStrata : [];
+      const coverageOverrides = plan && plan.coverageOverrides ? plan.coverageOverrides : [];
       return {
         generated_at_utc: new Date().toISOString(),
         methodology: {
@@ -1573,7 +1587,7 @@
           distribution: distribution(sample, cfg.stratifyFields),
         },
         allocations,
-        auto_defaulted_strata: autoDefaultedStrata.length > 0 ? autoDefaultedStrata : undefined,
+        coverage_overrides: coverageOverrides.length > 0 ? coverageOverrides : undefined,
         sample_ids: cfg.idColumn ? sample.map(r => r[cfg.idColumn]) : undefined,
       };
     }
@@ -1954,7 +1968,7 @@ Goals:
    - allocation approach implied by the stratum sizes vs allocations (e.g., proportional)
    - systematic_random_start (why it helps reduce selection bias)
    - random_seed (reproducibility/audit trail)
-   - auto_defaulted_strata (if present, these are strata that had 0 samples allocated by proportional allocation but were automatically defaulted to 1 sample to ensure minimum coverage; note the original calculated allocation was 0 and the impact on the total sample size)
+   - coverage_overrides (if present, these are user-initiated overrides where strata that had 0 samples allocated by proportional allocation were manually adjusted to 1 sample via the "Add +1 to zero strata" button; note the original calculated allocation was 0, the justification provided, and the impact on the total sample size)
    - any parameters that are null (what that implies and that no override was used)
 4) Provide a brief “AML audit context” paragraph tying the sampling design to typical AML objectives (e.g., coverage across jurisdictions, consistency with risk-based testing, defensibility of selection).
 5) Include a short limitations/assumptions section that is explicitly grounded in what the JSON does/does not say (e.g., if error definition, time period, or ordering of records is not provided, state that it is not specified).
