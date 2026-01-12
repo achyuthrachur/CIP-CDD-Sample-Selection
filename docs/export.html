@@ -24498,21 +24498,21 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
 
   </script>
   <script>
-// Attribute sample size calculator (one-sided upper bound on deviation rate)
+// Attribute sample size calculator (Wald CI + FPC with special-case override)
 // API: sampleSize(N, conf, TER, EER)
 // TER/EER are decimals (e.g., 0.04), conf in (0,1)
 
 (function(root) {
   function zScore(conf) {
     const alpha = 1 - conf;
-    if (Math.abs(conf - 0.99) < 1e-9) return 2.326; // per spec (one-sided)
-    // fall back to precise normal quantile (one-sided)
+    if (Math.abs(conf - 0.99) < 1e-9) return 2.58; // per spec
+    // fall back to precise normal quantile (two-sided)
     if (typeof jStat !== 'undefined' && jStat.normal && jStat.normal.inv) {
-      return jStat.normal.inv(1 - alpha, 0, 1);
+      return jStat.normal.inv(1 - alpha / 2, 0, 1);
     }
     // basic approximation if jStat not available in tests
     // Abramowitz-Stegun approximation
-    const p = 1 - alpha;
+    const p = 1 - alpha / 2;
     const a1 = -39.6968302866538,
       a2 = 220.946098424521,
       a3 = -275.928510446969;
@@ -24552,24 +24552,27 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       (((((b1 * r + b2) * r + b3) * r + b4) * r + b5) * r + 1);
   }
 
+  function approx(a, b, tol = 5e-4) {
+    return Math.abs(a - b) <= tol;
+  }
+
+  function norm4(x) {
+    return Math.round(x * 10000) / 10000;
+  }
+
   function sampleSize(N, conf, TER, EER) {
     if (!(N >= 1)) throw new Error('Population must be >= 1');
     if (!(conf > 0 && conf < 1)) throw new Error('Confidence must be in (0,1)');
     if (!(TER > 0 && TER < 1)) throw new Error('Tolerable error rate must be in (0,1)');
     if (!(EER >= 0 && EER < 1)) throw new Error('Expected error rate must be in [0,1)');
-    if (!(TER > EER)) throw new Error('Tolerable error rate must exceed expected error rate.');
+    const p = EER;
+    const E = TER - EER;
+    if (!(E > 0)) throw new Error('Tolerable error rate must exceed expected error rate.');
 
     const z = zScore(conf);
-    for (let n = 1; n <= N; n++) {
-      // Use expected deviations, rounded up, with a minimum of 1.
-      const x = Math.max(1, Math.ceil(n * EER));
-      const phat = x / n;
-      const ucl = phat + z * Math.sqrt((phat * (1 - phat)) / n);
-      if (ucl <= TER) {
-        return n;
-      }
-    }
-    return N;
+    const n0 = (z * z * p * (1 - p)) / (E * E);
+    const nCalc = Math.ceil((N * n0) / (N + n0 - 1));
+    return Math.max(1, Math.min(N, nCalc));
   }
 
   // Export
@@ -25243,6 +25246,14 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
             </div>
             <div class="hint">Sample and JSON update each time you generate.</div>
           </div>
+          <div class="action-card">
+            <div class="buttons tight">
+              <button type="button" id="genReport" class="secondary" disabled>Generate summary report</button>
+              <button type="button" id="downloadReport" disabled>Download summary report</button>
+            </div>
+            <div class="hint" id="reportStatus" aria-live="polite">Generate after sampling.</div>
+            <div class="progress" id="reportProgress" style="display:none;"><div class="progress-bar"></div></div>
+          </div>
         </div>
         <div class="summary" id="summaryBox">Load data and run sampling to see results.</div>
         <div id="overrideNote" class="hint"></div>
@@ -25282,6 +25293,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       sheetName: null,
       fileName: null,
       plan: null,
+      report: '',
       recentUploads: [],
       stratifySelected: [],
       fileMeta: null,
@@ -25308,6 +25320,10 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
     const overrideJustificationEl = document.getElementById('overrideJustification');
     const overrideJustificationWrapper = document.getElementById('overrideJustificationWrapper');
     const sheetNameHint = document.getElementById('sheetNameHint');
+    const genReportBtn = document.getElementById('genReport');
+    const downloadReportBtn = document.getElementById('downloadReport');
+    const reportStatusEl = document.getElementById('reportStatus');
+    const reportProgress = document.getElementById('reportProgress');
     const fileMetaEl = document.getElementById('fileMeta');
     const recentUploadsEl = document.getElementById('recentUploads');
     const statusBarEl = document.getElementById('statusBar');
@@ -25323,6 +25339,14 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       statusEl.textContent = msg;
       statusEl.style.color = tone === 'danger' ? 'var(--danger)' : tone === 'success' ? 'var(--success)' : 'var(--muted)';
       updateStatusBar();
+    }
+
+    function setReportStatus(msg, tone = 'muted') {
+      reportStatusEl.textContent = msg;
+      reportStatusEl.style.color = tone === 'danger' ? 'var(--danger)' : tone === 'success' ? 'var(--success)' : 'var(--muted)';
+    }
+    function showReportProgress(show) {
+      reportProgress.style.display = show ? 'block' : 'none';
     }
 
     function normalizeValue(value) {
@@ -25660,13 +25684,13 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
     function zScore(confidence) {
       const c = Math.max(0.001, Math.min(0.999, confidence));
       try {
-        return jStat.normal.inv(c, 0, 1);
+        return jStat.normal.inv(1 - (1 - c) / 2, 0, 1);
       } catch {
-        // fallback common one-sided values
-        if (Math.abs(c - 0.95) < 1e-3) return 1.645;
-        if (Math.abs(c - 0.99) < 1e-3) return 2.326;
-        if (Math.abs(c - 0.90) < 1e-3) return 1.282;
-        return 2.326;
+        // fallback common values
+        if (Math.abs(c - 0.95) < 1e-3) return 1.96;
+        if (Math.abs(c - 0.99) < 1e-3) return 2.576;
+        if (Math.abs(c - 0.90) < 1e-3) return 1.645;
+        return 2.576;
       }
     }
 
@@ -26148,6 +26172,11 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
         if (overrideNoteEl) overrideNoteEl.textContent = '';
         downloadCsvBtn.disabled = true;
         downloadJsonBtn.disabled = true;
+        genReportBtn.disabled = true;
+        downloadReportBtn.disabled = true;
+        state.report = '';
+        setReportStatus('Generate after sampling.');
+        showReportProgress(false);
         renderStats();
         updateStatusBar();
         return;
@@ -26175,6 +26204,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       }
       downloadCsvBtn.disabled = false;
       downloadJsonBtn.disabled = false;
+       genReportBtn.disabled = false;
       renderStats();
       updateStatusBar();
     }
@@ -26271,6 +26301,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       state.sheetName = null;
       state.fileName = null;
       state.plan = null;
+      state.report = '';
       state.fileMeta = null;
       state.stratifySelected = [];
       idColumnInput.value = '';
@@ -26281,6 +26312,10 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       renderPlan();
       planBtn.disabled = true;
       runBtn.disabled = true;
+      genReportBtn.disabled = true;
+      downloadReportBtn.disabled = true;
+      setReportStatus('Generate after sampling.');
+      showReportProgress(false);
       sheetNameHint.textContent = '';
       setStatus('Reset. Load a new file.', 'muted');
       renderStats();
@@ -26390,6 +26425,101 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       const a = document.createElement('a');
       a.href = url;
       a.download = 'sampling_summary.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+        function summarizeAllocationsText(summary) {
+      const allocations = summary.allocations || [];
+      if (!allocations.length) return [];
+      const lines = ['Per-stratum allocation:'];
+      allocations.forEach(a => {
+        const desc = Object.entries(a.stratum || {}).map(([k, v]) => `${k}=${v === null ? 'NULL' : v}`).join(', ') || '(all)';
+        lines.push(`- ${desc}: ${a.sample_count} of ${a.population_count} (${((a.share_of_sample || 0) * 100).toFixed(1)}% of sample)`);
+      });
+      return lines;
+    }
+
+    function generateLocalReport(summary) {
+      const method = summary.methodology || {};
+      const source = summary.source || {};
+      const pop = summary.population || {};
+      const sample = summary.sample || {};
+      const pct = (v) => Number.isFinite(v) ? `${(v * 100).toFixed(2)}%` : 'n/a';
+      const plain = (v) => (v === null || v === undefined || v === '') ? 'n/a' : v;
+      const lines = [];
+      lines.push('Population');
+      lines.push(`- Source: ${plain(source.file_name)} (sheet: ${plain(source.sheet_name)})`);
+      lines.push(`- Size (N): ${pop.size ?? 0}`);
+      if (Array.isArray(pop.distribution) && pop.distribution.length) {
+        lines.push('- Stratification:');
+        pop.distribution.slice(0, 10).forEach(d => {
+          const desc = Object.entries(d.stratum || {}).map(([k, v]) => `${k}=${v === null ? 'NULL' : v}`).join(', ') || '(all)';
+          lines.push(`  - ${desc}: ${d.count} (${pct(d.share || 0)})`);
+        });
+        if (pop.distribution.length > 10) lines.push(`  - ...${pop.distribution.length - 10} more strata not shown`);
+      }
+
+      lines.push('');
+      lines.push('Sample');
+      lines.push(`- Planned size (n): ${plain(method.planned_sample_size)}`);
+      lines.push(`- Actual sample size: ${plain(sample.size)}`);
+      lines.push(`- Method: ${plain(method.method)}; confidence=${pct(method.confidence)} margin=${pct(method.margin)} expected_error=${pct(method.expected_error_rate)}`);
+      lines.push(`- Stratify fields: ${(summary.stratify_fields || []).join(', ') || 'None'}`);
+      lines.push(...summarizeAllocationsText(summary));
+
+      lines.push('');
+      lines.push('Parameters');
+      lines.push(`- Sample size override: ${plain(method.sample_size_parameter)}`);
+      lines.push(`- Sample pct parameter: ${plain(method.sample_percentage_parameter)}`);
+      lines.push(`- Systematic step: ${plain(method.systematic_step_parameter)}`);
+      lines.push(`- Seed: ${plain(method.seed ?? 42)}; random start: ${method.systematic_random_start ? 'Yes' : 'No'}`);
+      lines.push(`- Override justification: ${plain(method.override_justification) || 'None provided'}`);
+
+      lines.push('');
+      lines.push('Notes');
+      lines.push('- Generated locally for offline use; no external APIs are called.');
+      return lines.join('\n');
+    }
+
+    async function generateReport(summary) {
+      if (!summary) throw new Error('Run sampling first.');
+      return generateLocalReport(summary);
+    }
+
+    genReportBtn.addEventListener('click', async () => {
+      const cfg = state.lastConfig || readConfigForm();
+      if (!ensureJustification(cfg, statusEl)) return;
+      if (!state.summary) {
+        setReportStatus('Run sampling first.', 'danger');
+        return;
+      }
+      try {
+        setReportStatus('Generating local report...', 'muted');
+        showReportProgress(true);
+        genReportBtn.disabled = true;
+        const text = await generateReport(state.summary);
+        state.report = text;
+        downloadReportBtn.disabled = !text;
+        setReportStatus('Local report ready. Click download.', 'success');
+      } catch (err) {
+        console.error(err);
+        setReportStatus(err.message || 'Failed to generate report.', 'danger');
+      } finally {
+        genReportBtn.disabled = false;
+        showReportProgress(false);
+      }
+    });
+
+    downloadReportBtn.addEventListener('click', () => {
+      if (!state.report) return;
+      const cfg = state.lastConfig || readConfigForm();
+      if (!ensureJustification(cfg, statusEl)) return;
+      const blob = new Blob([state.report], { type: 'text/plain;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'sampling_summary.txt';
       a.click();
       URL.revokeObjectURL(url);
     });

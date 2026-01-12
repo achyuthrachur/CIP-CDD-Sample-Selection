@@ -1,18 +1,18 @@
-// Attribute sample size calculator (one-sided upper bound on deviation rate)
+// Attribute sample size calculator (Wald CI + FPC with special-case override)
 // API: sampleSize(N, conf, TER, EER)
 // TER/EER are decimals (e.g., 0.04), conf in (0,1)
 
 (function(root) {
   function zScore(conf) {
     const alpha = 1 - conf;
-    if (Math.abs(conf - 0.99) < 1e-9) return 2.326; // per spec (one-sided)
-    // fall back to precise normal quantile (one-sided)
+    if (Math.abs(conf - 0.99) < 1e-9) return 2.58; // per spec
+    // fall back to precise normal quantile (two-sided)
     if (typeof jStat !== 'undefined' && jStat.normal && jStat.normal.inv) {
-      return jStat.normal.inv(1 - alpha, 0, 1);
+      return jStat.normal.inv(1 - alpha / 2, 0, 1);
     }
     // basic approximation if jStat not available in tests
     // Abramowitz-Stegun approximation
-    const p = 1 - alpha;
+    const p = 1 - alpha / 2;
     const a1 = -39.6968302866538,
       a2 = 220.946098424521,
       a3 = -275.928510446969;
@@ -52,24 +52,27 @@
       (((((b1 * r + b2) * r + b3) * r + b4) * r + b5) * r + 1);
   }
 
+  function approx(a, b, tol = 5e-4) {
+    return Math.abs(a - b) <= tol;
+  }
+
+  function norm4(x) {
+    return Math.round(x * 10000) / 10000;
+  }
+
   function sampleSize(N, conf, TER, EER) {
     if (!(N >= 1)) throw new Error('Population must be >= 1');
     if (!(conf > 0 && conf < 1)) throw new Error('Confidence must be in (0,1)');
     if (!(TER > 0 && TER < 1)) throw new Error('Tolerable error rate must be in (0,1)');
     if (!(EER >= 0 && EER < 1)) throw new Error('Expected error rate must be in [0,1)');
-    if (!(TER > EER)) throw new Error('Tolerable error rate must exceed expected error rate.');
+    const p = EER;
+    const E = TER - EER;
+    if (!(E > 0)) throw new Error('Tolerable error rate must exceed expected error rate.');
 
     const z = zScore(conf);
-    for (let n = 1; n <= N; n++) {
-      // Use expected deviations, rounded up, with a minimum of 1.
-      const x = Math.max(1, Math.ceil(n * EER));
-      const phat = x / n;
-      const ucl = phat + z * Math.sqrt((phat * (1 - phat)) / n);
-      if (ucl <= TER) {
-        return n;
-      }
-    }
-    return N;
+    const n0 = (z * z * p * (1 - p)) / (E * E);
+    const nCalc = Math.ceil((N * n0) / (N + n0 - 1));
+    return Math.max(1, Math.min(N, nCalc));
   }
 
   // Export
