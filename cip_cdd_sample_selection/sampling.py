@@ -59,11 +59,14 @@ def calculate_statistical_sample_size(
     if margin <= expected_error_rate:
         raise ValueError("Tolerable error rate must exceed expected error rate.")
     z = z_score(confidence)
-    p = expected_error_rate
-    allowable_gap = margin - expected_error_rate
-    n0 = (z**2) * p * (1 - p) / (allowable_gap**2)
-    n = n0 / (1 + ((n0 - 1) / population_size))
-    return math.ceil(n)
+    for n in range(1, population_size + 1):
+        # Use expected deviations, rounded up, with a minimum of 1.
+        expected_deviations = max(1, math.ceil(n * expected_error_rate))
+        phat = expected_deviations / n
+        ucl = phat + z * math.sqrt((phat * (1 - phat)) / n)
+        if ucl <= margin:
+            return n
+    return population_size
 
 
 def resolve_sample_size(population_size: int, cfg: SamplingConfig) -> int:

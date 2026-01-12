@@ -86,5 +86,5 @@ git push -u origin main
 
 ## Limitations and assumptions
 - Designed for Excel inputs with a header row.
-- Statistical sizing uses a standard one-sided proportion bound with finite population correction; values are capped at the population size.
+- Statistical sizing uses a one-sided upper confidence bound on the deviation rate (attribute sampling); values are capped at the population size.
 - Large samples will make the JSON sizable; adjust as needed.

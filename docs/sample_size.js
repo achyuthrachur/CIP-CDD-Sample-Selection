@@ -1,4 +1,4 @@
-// Attribute sample size calculator (one-sided upper bound + FPC with special-case override)
+// Attribute sample size calculator (one-sided upper bound on deviation rate)
 // API: sampleSize(N, conf, TER, EER)
 // TER/EER are decimals (e.g., 0.04), conf in (0,1)
 
@@ -52,27 +52,24 @@
       (((((b1 * r + b2) * r + b3) * r + b4) * r + b5) * r + 1);
   }
 
-  function approx(a, b, tol = 5e-4) {
-    return Math.abs(a - b) <= tol;
-  }
-
-  function norm4(x) {
-    return Math.round(x * 10000) / 10000;
-  }
-
   function sampleSize(N, conf, TER, EER) {
     if (!(N >= 1)) throw new Error('Population must be >= 1');
     if (!(conf > 0 && conf < 1)) throw new Error('Confidence must be in (0,1)');
     if (!(TER > 0 && TER < 1)) throw new Error('Tolerable error rate must be in (0,1)');
     if (!(EER >= 0 && EER < 1)) throw new Error('Expected error rate must be in [0,1)');
-    const p = EER;
-    const E = TER - EER;
-    if (!(E > 0)) throw new Error('Tolerable error rate must exceed expected error rate.');
+    if (!(TER > EER)) throw new Error('Tolerable error rate must exceed expected error rate.');
 
     const z = zScore(conf);
-    const n0 = (z * z * p * (1 - p)) / (E * E);
-    const nCalc = Math.ceil((N * n0) / (N + n0 - 1));
-    return Math.max(1, Math.min(N, nCalc));
+    for (let n = 1; n <= N; n++) {
+      // Use expected deviations, rounded up, with a minimum of 1.
+      const x = Math.max(1, Math.ceil(n * EER));
+      const phat = x / n;
+      const ucl = phat + z * Math.sqrt((phat * (1 - phat)) / n);
+      if (ucl <= TER) {
+        return n;
+      }
+    }
+    return N;
   }
 
   // Export
