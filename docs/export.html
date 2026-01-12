@@ -24801,7 +24801,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
     .header-content h1 {
       font-size: clamp(1.5rem, 4vw, 2rem);
       font-weight: 800;
-      color: #000000;
+      color: #90D5FF;
       letter-spacing: -0.5px;
     }
 
@@ -25207,6 +25207,18 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
       gap: 16px;
+      align-items: end;
+    }
+
+    .row > div {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .row > div > label {
+      min-height: 44px;
+      display: flex;
+      align-items: flex-end;
     }
 
     /* Checkboxes */
