@@ -25202,8 +25202,10 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
           <label for="idColumnInput">ID column (optional)</label>
           <input class="typeahead" list="idColumnOptions" id="idColumnInput" name="idColumnInput" placeholder="Type to search columns">
           <datalist id="idColumnOptions"></datalist>
-
-          <div class="row">
+          <div class="checkboxes" style="margin-top:12px;">
+            <label><input type="checkbox" id="editRandomizerToggle"> Edit Randomizer</label>
+          </div>
+          <div id="randomizerSection" class="row" style="display:none;">
             <div>
               <label for="seed">Random seed</label>
               <input type="number" id="seed" name="seed" value="42">
@@ -25258,11 +25260,12 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
         <div class="summary" id="summaryBox">Load data and run sampling to see results.</div>
         <div id="overrideNote" class="hint"></div>
         <div style="margin-top:12px;">
-          <h3>Download Summary Prompt</h3>
+          <h3>Summary Prompt</h3>
           <textarea id="promptText" style="width:100%;min-height:220px;white-space:pre-wrap;" readonly></textarea>
           <div class="buttons tight" style="margin-top:8px;">
-            <button type="button" id="downloadPrompt">Download Summary Prompt</button>
+            <button type="button" id="copyPrompt">Copy Prompt</button>
           </div>
+          <div class="hint" id="copyStatus"></div>
         </div>
       </section>
     </div>
@@ -25316,7 +25319,10 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
     const summaryBox = document.getElementById('summaryBox');
     const overrideNoteEl = document.getElementById('overrideNote');
     const promptTextEl = document.getElementById('promptText');
-    const downloadPromptBtn = document.getElementById('downloadPrompt');
+    const copyPromptBtn = document.getElementById('copyPrompt');
+    const copyStatusEl = document.getElementById('copyStatus');
+    const editRandomizerToggle = document.getElementById('editRandomizerToggle');
+    const randomizerSection = document.getElementById('randomizerSection');
     const overrideJustificationEl = document.getElementById('overrideJustification');
     const overrideJustificationWrapper = document.getElementById('overrideJustificationWrapper');
     const sheetNameHint = document.getElementById('sheetNameHint');
@@ -25962,11 +25968,13 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
               stratum: {},
               population_count: effectivePop,
               sample_count: Math.min(effectivePop, desiredSize),
+              auto_defaulted_from_zero: false,
             },
           ],
           plannedSize: Math.min(effectivePop, desiredSize),
           desiredSize,
           stratifyFields: [],
+          autoDefaultedStrata: [],
         };
       }
       const groups = {};
@@ -25977,15 +25985,34 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       }
       const counts = Object.fromEntries(Object.entries(groups).map(([k, arr]) => [k, arr.length]));
       const allocationsMap = proportionalAllocation(counts, desiredSize);
+
+      // Track strata that were auto-defaulted from 0 to 1
+      const autoDefaultedStrata = [];
+
       const allocations = Object.entries(groups).map(([k, arr]) => {
-      const values = JSON.parse(k).map(v => v === MISSING_VALUE ? null : v);
+        const values = JSON.parse(k).map(v => v === MISSING_VALUE ? null : v);
         const stratum = {};
         cfg.stratifyFields.forEach((f, i) => stratum[f] = values[i]);
+        let sampleCount = allocationsMap[k] || 0;
+        let autoDefaulted = false;
+
+        // Auto-default strata with 0 samples to 1 (if population > 0)
+        if (sampleCount === 0 && arr.length > 0) {
+          sampleCount = 1;
+          autoDefaulted = true;
+          autoDefaultedStrata.push({
+            stratum: { ...stratum },
+            original_sample_count: 0,
+            defaulted_to: 1,
+          });
+        }
+
         return {
           key: k,
           stratum,
           population_count: arr.length,
-          sample_count: allocationsMap[k] || 0,
+          sample_count: sampleCount,
+          auto_defaulted_from_zero: autoDefaulted,
         };
       });
       const plannedSize = allocations.reduce((s, a) => s + a.sample_count, 0);
@@ -25996,6 +26023,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
         stratifyFields: cfg.stratifyFields.slice(),
         populationSize: population.length,
         signature: configSignature(cfg),
+        autoDefaultedStrata,
       };
     }
 
@@ -26007,10 +26035,11 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       const rowsHtml = state.plan.allocations.map((a, idx) => {
         const label = Object.entries(a.stratum).map(([k, v]) => `${k}: ${v === null ? 'NULL' : v}`).join(', ') || '(all)';
         const encodedKey = encodeURIComponent(a.key);
+        const autoDefaultedTag = a.auto_defaulted_from_zero ? ' <span style="color:var(--accent-2);font-size:11px;" title="Auto-defaulted from 0 to 1">(auto +1)</span>' : '';
         return `
-          <tr>
+          <tr${a.auto_defaulted_from_zero ? ' style="background:rgba(245,158,11,0.08);"' : ''}>
             <td>${idx + 1}</td>
-            <td>${label}</td>
+            <td>${label}${autoDefaultedTag}</td>
             <td>${a.population_count}</td>
             <td><input type="number" min="0" max="${a.population_count}" value="${a.sample_count}" data-plan-key="${encodedKey}"></td>
           </tr>
@@ -26018,10 +26047,13 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       }).join('');
       const total = state.plan.allocations.reduce((s, a) => s + a.sample_count, 0);
       state.plan.plannedSize = total;
+      const autoDefaultedCount = state.plan.autoDefaultedStrata ? state.plan.autoDefaultedStrata.length : 0;
       const match = total === state.plan.desiredSize;
+      const autoDefaultNote = autoDefaultedCount > 0 ? `<div class="badge pill badge-warn">${autoDefaultedCount} stratum/strata auto-defaulted from 0 to 1</div>` : '';
       planBox.innerHTML = `
         <div class="badge pill ${match ? 'badge-ok' : 'badge-warn'}">Planned total: ${total}</div>
         <div class="badge pill">Calculated target: ${state.plan.desiredSize}</div>
+        ${autoDefaultNote}
         <div class="plan-scroll">
           <table class="table-zebra">
             <thead>
@@ -26030,7 +26062,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
             <tbody>${rowsHtml}</tbody>
           </table>
         </div>
-        <div class="hint">${match ? 'Adjust sample counts per stratum if needed, then click "Generate sample".' : 'Totals differ from target - adjust counts or proceed if override is intended.'}</div>
+        <div class="hint">${match ? 'Adjust sample counts per stratum if needed, then click "Generate sample".' : 'Totals differ from target - adjust counts or proceed if override is intended.'}${autoDefaultedCount > 0 ? ' Strata with 0 allocation were auto-defaulted to 1. You can manually set them back to 0 if needed.' : ''}</div>
       `;
 
       planBox.querySelectorAll('input[type="number"]').forEach(input => {
@@ -26090,7 +26122,8 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       return { sample: samples, allocations: allocationSummary };
     }
 
-    function buildSummary(population, sample, allocations, cfg, plannedSize) {
+    function buildSummary(population, sample, allocations, cfg, plannedSize, plan) {
+      const autoDefaultedStrata = plan && plan.autoDefaultedStrata ? plan.autoDefaultedStrata : [];
       return {
         generated_at_utc: new Date().toISOString(),
         methodology: {
@@ -26120,6 +26153,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
           distribution: distribution(sample, cfg.stratifyFields),
         },
         allocations,
+        auto_defaulted_strata: autoDefaultedStrata.length > 0 ? autoDefaultedStrata : undefined,
         sample_ids: cfg.idColumn ? sample.map(r => r[cfg.idColumn]) : undefined,
       };
     }
@@ -26151,7 +26185,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
           },
         ] : [];
       }
-      const summary = buildSummary(population, sample, allocations, cfg, desiredSize);
+      const summary = buildSummary(population, sample, allocations, cfg, desiredSize, plan);
       return { sample, summary };
     }
 
@@ -26538,6 +26572,7 @@ Goals:
    - allocation approach implied by the stratum sizes vs allocations (e.g., proportional)
    - systematic_random_start (why it helps reduce selection bias)
    - random_seed (reproducibility/audit trail)
+   - auto_defaulted_strata (if present, these are strata that had 0 samples allocated by proportional allocation but were automatically defaulted to 1 sample to ensure minimum coverage; note the original calculated allocation was 0 and the impact on the total sample size)
    - any parameters that are null (what that implies and that no override was used)
 4) Provide a brief “AML audit context” paragraph tying the sampling design to typical AML objectives (e.g., coverage across jurisdictions, consistency with risk-based testing, defensibility of selection).
 5) Include a short limitations/assumptions section that is explicitly grounded in what the JSON does/does not say (e.g., if error definition, time period, or ordering of records is not provided, state that it is not specified).
@@ -26552,17 +26587,27 @@ Formatting requirements:
     if (promptTextEl) {
       promptTextEl.value = SUMMARY_PROMPT;
     }
-    if (downloadPromptBtn) {
-      downloadPromptBtn.addEventListener('click', () => {
-        const cfg = state.lastConfig || readConfigForm();
-        if (!ensureJustification(cfg, statusEl)) return;
-        const blob = new Blob([SUMMARY_PROMPT], { type: 'text/plain;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'aml_sampling_summary_prompt.txt';
-        a.click();
-        URL.revokeObjectURL(url);
+    if (copyPromptBtn) {
+      copyPromptBtn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(SUMMARY_PROMPT);
+          if (copyStatusEl) {
+            copyStatusEl.textContent = 'Prompt copied to clipboard\!';
+            copyStatusEl.style.color = 'var(--success)';
+            setTimeout(() => { copyStatusEl.textContent = ''; }, 3000);
+          }
+        } catch (err) {
+          console.error('Failed to copy:', err);
+          if (copyStatusEl) {
+            copyStatusEl.textContent = 'Failed to copy. Please select and copy manually.';
+            copyStatusEl.style.color = 'var(--danger)';
+          }
+        }
+      });
+    }
+    if (editRandomizerToggle && randomizerSection) {
+      editRandomizerToggle.addEventListener('change', () => {
+        randomizerSection.style.display = editRandomizerToggle.checked ? 'grid' : 'none';
       });
     }
 

@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell -Command:*)",
+      "Bash(node:*)",
+      "Bash(python3:*)",
+      "Bash(/c/Users/rachura/AppData/Local/Programs/Python/Python313/python:*)"
+    ]
+  }
+}
