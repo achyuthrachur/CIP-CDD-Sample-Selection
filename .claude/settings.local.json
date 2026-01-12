@@ -8,7 +8,8 @@
       "Bash(tree:*)",
       "Bash(git add:*)",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nRemove auto-defaulting of zero strata to 1\n\nThe proportionalAllocation function was still forcing all strata to\nhave at least 1 sample when totalSize >= number of strata. This\nprevented the \"Add +1 to zero strata\" button from being useful since\nstrata never showed 0.\n\nNow strata with very small populations will correctly show 0 samples\nin the plan, and users can choose to apply coverage overrides.\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
-      "Bash(git push)"
+      "Bash(git push)",
+      "Bash(dir /b \"c:\\\\Users\\\\rachura\\\\OneDrive - Crowe LLP\\\\VS Code Programming Projects\\\\CIP CDD Sample Selection\")"
     ]
   }
 }
