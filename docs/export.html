@@ -24593,15 +24593,15 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
 
     /* CSS Custom Properties - Light Theme (default) */
     :root {
-      --bg-primary: #f0f5ff;
+      --bg-primary: #90D5FF;
       --bg-secondary: #ffffff;
       --bg-gradient: linear-gradient(135deg, #2563eb 0%, #3b82f6 50%, #60a5fa 100%);
       --glass-bg: rgba(255, 255, 255, 0.7);
       --glass-border: rgba(255, 255, 255, 0.5);
       --glass-shadow: 0 8px 32px rgba(37, 99, 235, 0.15);
-      --text-primary: #111111;
-      --text-secondary: #374151;
-      --text-muted: #6b7280;
+      --text-primary: #000000;
+      --text-secondary: #000000;
+      --text-muted: #000000;
       --accent-primary: #2563eb;
       --accent-secondary: #3b82f6;
       --accent-tertiary: #60a5fa;
@@ -24626,9 +24626,9 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       --glass-bg: rgba(15, 30, 54, 0.8);
       --glass-border: rgba(59, 130, 246, 0.3);
       --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-      --text-primary: #e2e8f0;
-      --text-secondary: #a0aec0;
-      --text-muted: #718096;
+      --text-primary: #ffffff;
+      --text-secondary: #ffffff;
+      --text-muted: #ffffff;
       --accent-primary: #60a5fa;
       --accent-secondary: #3b82f6;
       --accent-tertiary: #93c5fd;
@@ -24754,7 +24754,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
 
     /* Glassmorphism Header */
     header {
-      background: var(--glass-bg);
+      background: #90D5FF;
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border: 1px solid var(--glass-border);
@@ -24769,6 +24769,10 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       animation: slideDown 0.6s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
       overflow: hidden;
+    }
+
+    [data-theme="dark"] header {
+      background: var(--glass-bg);
     }
 
     header::before {
@@ -24801,7 +24805,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
     .header-content h1 {
       font-size: clamp(1.5rem, 4vw, 2rem);
       font-weight: 800;
-      color: #90D5FF;
+      color: #000000;
       letter-spacing: -0.5px;
     }
 
