@@ -1166,12 +1166,6 @@
           base.set(key, (base.get(key) || 0) + 1);
         }
       }
-      // Ensure at least one per stratum when possible
-      if (totalSize >= entries.length) {
-        for (const [k, c] of entries) {
-          if (c > 0 && (base.get(k) || 0) === 0) base.set(k, 1);
-        }
-      }
       // Cap by stratum size
       for (const [k, c] of entries) {
         if ((base.get(k) || 0) > c) base.set(k, c);
