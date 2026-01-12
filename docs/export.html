@@ -24801,13 +24801,18 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
     .header-content h1 {
       font-size: clamp(1.5rem, 4vw, 2rem);
       font-weight: 800;
+      color: #000000;
+      letter-spacing: -0.5px;
+    }
+
+    [data-theme="dark"] .header-content h1 {
       background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary), var(--accent-tertiary));
       background-size: 200% 200%;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
+      color: transparent;
       animation: gradientText 5s ease infinite;
-      letter-spacing: -0.5px;
     }
 
     @keyframes gradientText {
@@ -24816,9 +24821,13 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
     }
 
     header p {
-      color: var(--text-secondary);
+      color: #000000;
       font-size: 0.95rem;
       margin-top: 4px;
+    }
+
+    [data-theme="dark"] header p {
+      color: var(--text-secondary);
     }
 
     /* Theme Toggle */
