@@ -26889,7 +26889,17 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       const hasSampleSizeOverride = cfg.sampleSize != null;
       const hasSamplePercentageOverride = cfg.samplePercentage != null;
       const hasSystematicStepOverride = cfg.systematicStep != null;
-      const hasAnyOverride = hasPopulationOverride || hasSampleSizeOverride || hasSamplePercentageOverride || hasSystematicStepOverride || coverageOverrides.length > 0;
+
+      // Calculate allocation adjustments first so we can check if any exist
+      const allocationAdjustments = allocationsWithDiff.filter(a => a.allocation_difference !== 0).map(a => ({
+        stratum: a.stratum,
+        proportional_allocation: a.proportional_allocation,
+        actual_allocation: a.sample_count,
+        difference: a.allocation_difference,
+      }));
+
+      // Include allocation adjustments in the override check
+      const hasAnyOverride = hasPopulationOverride || hasSampleSizeOverride || hasSamplePercentageOverride || hasSystematicStepOverride || coverageOverrides.length > 0 || allocationAdjustments.length > 0;
 
       const overridesSection = {
         has_overrides: hasAnyOverride,
@@ -26901,12 +26911,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
           systematic_step: hasSystematicStepOverride ? { applied: true, value: cfg.systematicStep } : { applied: false },
         },
         coverage_overrides: coverageOverrides.length > 0 ? coverageOverrides : [],
-        allocation_adjustments: allocationsWithDiff.filter(a => a.allocation_difference !== 0).map(a => ({
-          stratum: a.stratum,
-          proportional_allocation: a.proportional_allocation,
-          actual_allocation: a.sample_count,
-          difference: a.allocation_difference,
-        })),
+        allocation_adjustments: allocationAdjustments,
       };
 
       return {
