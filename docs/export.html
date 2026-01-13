@@ -24972,6 +24972,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       overflow: hidden;
       transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       animation: fadeInScale 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
+      color: var(--text-primary);
     }
 
     .grid-main { animation-delay: 0.2s; }
@@ -25459,6 +25460,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       border-radius: 16px;
       padding: 16px;
       transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      color: var(--text-primary);
     }
 
     .stats-card:hover {
@@ -25480,6 +25482,8 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       gap: 10px;
       align-items: center;
       margin-bottom: 10px;
+      overflow: hidden;
+      max-width: 100%;
     }
 
     .stat-pill {
@@ -25493,6 +25497,10 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       font-size: 0.85rem;
       white-space: nowrap;
       transition: all 0.3s;
+      color: var(--text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
     }
 
     .stat-pill:hover {
@@ -26908,7 +26916,6 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
               <span class="stat-pill"><strong>Rows</strong>: ${pop.rows.toLocaleString()}</span>
               <span class="stat-pill"><strong>Columns</strong>: ${state.columns.length}</span>
             </div>
-            <div class="stat-row">${renderStatPills(pop)}</div>
           </div>
           <div class="stats-card">
             <h3>Sample</h3>
@@ -26916,7 +26923,6 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
               <span class="stat-pill"><strong>Rows</strong>: ${sample.rows.toLocaleString()}</span>
               <span class="stat-pill"><strong>Share</strong>: ${formatNumber(sample.share * 100)}%</span>
             </div>
-            <div class="stat-row">${renderStatPills(sample)}</div>
           </div>
         </div>
         ${state.summary.stratify_fields && state.summary.stratify_fields.length ? `
