@@ -25509,6 +25509,100 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       }
     }
 
+    /* Override confirmation modal */
+    .confirm-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+    }
+
+    .confirm-overlay.visible {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .confirm-modal {
+      background: var(--card-bg);
+      border: 2px solid var(--warning, #f59e0b);
+      border-radius: 12px;
+      padding: 24px 32px;
+      max-width: 420px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px var(--border-color);
+      transform: scale(0.9) translateY(-20px);
+      transition: transform 0.2s ease;
+    }
+
+    .confirm-overlay.visible .confirm-modal {
+      transform: scale(1) translateY(0);
+    }
+
+    .confirm-modal .alert-icon {
+      font-size: 2.5rem;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .confirm-modal h3 {
+      margin: 0 0 12px 0;
+      font-size: 1.1rem;
+      color: var(--warning, #f59e0b);
+      text-align: center;
+    }
+
+    .confirm-modal p {
+      margin: 0 0 24px 0;
+      color: var(--text-secondary);
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .confirm-modal .confirm-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .confirm-modal .confirm-buttons button {
+      padding: 10px 24px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .confirm-modal .btn-back {
+      background: var(--card-hover);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+    }
+
+    .confirm-modal .btn-back:hover {
+      background: var(--border-color);
+    }
+
+    .confirm-modal .btn-proceed {
+      background: var(--warning, #f59e0b);
+      border: 1px solid var(--warning, #f59e0b);
+      color: #000;
+    }
+
+    .confirm-modal .btn-proceed:hover {
+      background: #d97706;
+      border-color: #d97706;
+    }
+
     /* Override textarea styling */
     textarea {
       resize: vertical;
@@ -25571,6 +25665,19 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
 
   <!-- Noise Texture -->
   <div class="noise-overlay"></div>
+
+  <!-- Override Confirmation Modal -->
+  <div class="confirm-overlay" id="overrideConfirmModal">
+    <div class="confirm-modal">
+      <div class="alert-icon">&#x26A0;</div>
+      <h3>Override Detected</h3>
+      <p>Please ensure that rationale is documented for all overrides made.</p>
+      <div class="confirm-buttons">
+        <button type="button" class="btn-back" id="confirmGoBack">Go Back</button>
+        <button type="button" class="btn-proceed" id="confirmProceed">Yes, Proceed</button>
+      </div>
+    </div>
+  </div>
 
   <main>
     <header>
@@ -26493,17 +26600,17 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
             </div>
           </div>
         </div>
-        ${state.summary.stratify_fields && state.summary.stratify_fields.length ? `
+        ${state.summary.define_population?.stratify_fields?.length ? `
         <div class="stats-card strata-card">
           <div class="stat-row">
             <span class="stat-pill"><strong>Stratified distribution</strong></span>
-            <span class="stat-pill">Fields: ${state.summary.stratify_fields.join(', ')}</span>
+            <span class="stat-pill">Fields: ${state.summary.define_population.stratify_fields.join(', ')}</span>
           </div>
           <div class="table-wrap">
             <table class="table-zebra strata-table">
               <thead>
                 <tr>
-                  ${state.summary.stratify_fields.map(f => `<th>${f}</th>`).join('')}
+                  ${state.summary.define_population.stratify_fields.map(f => `<th>${f}</th>`).join('')}
                   <th>Population</th>
                   <th>Pop %</th>
                   <th>Sample</th>
@@ -26512,12 +26619,12 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
               </thead>
               <tbody>
                 ${(() => {
-                  const allocations = (state.summary.allocations || []).slice().sort((a, b) => (b.population_count ?? 0) - (a.population_count ?? 0));
+                  const allocations = (state.summary.sample_selection_method?.allocations_by_stratum || []).slice().sort((a, b) => (b.population_count ?? 0) - (a.population_count ?? 0));
                   if (!allocations.length) {
-                    return `<tr><td colspan="${state.summary.stratify_fields.length + 4}" class="stat-muted">No stratification distribution available.</td></tr>`;
+                    return `<tr><td colspan="${state.summary.define_population.stratify_fields.length + 4}" class="stat-muted">No stratification distribution available.</td></tr>`;
                   }
                   return allocations.map(a => {
-                    const cells = state.summary.stratify_fields.map(f => `<td>${formatValue((a.stratum || {})[f])}</td>`).join('');
+                    const cells = state.summary.define_population.stratify_fields.map(f => `<td>${formatValue((a.stratum || {})[f])}</td>`).join('');
                     const popCount = a.population_count ?? 0;
                     const sampleCount = a.sample_count ?? 0;
                     return `
@@ -26566,16 +26673,18 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       const desiredSize = resolveSampleSize(effectivePop, cfg);
       if (desiredSize <= 0) throw new Error('Calculated sample size is 0. Adjust parameters.');
       if (!cfg.stratifyFields.length) {
+        const sampleCount = Math.min(effectivePop, desiredSize);
         return {
           allocations: [
             {
               key: '__all__',
               stratum: {},
               population_count: effectivePop,
-              sample_count: Math.min(effectivePop, desiredSize),
+              sample_count: sampleCount,
+              original_sample_count: sampleCount,
             },
           ],
-          plannedSize: Math.min(effectivePop, desiredSize),
+          plannedSize: sampleCount,
           desiredSize,
           stratifyFields: [],
           coverageOverrides: [],
@@ -26601,6 +26710,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
           stratum,
           population_count: arr.length,
           sample_count: sampleCount,
+          original_sample_count: sampleCount,
         };
       });
       const plannedSize = allocations.reduce((s, a) => s + a.sample_count, 0);
@@ -26743,36 +26853,87 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
 
     function buildSummary(population, sample, allocations, cfg, plannedSize, plan) {
       const coverageOverrides = plan && plan.coverageOverrides ? plan.coverageOverrides : [];
+
+      // Track ALL allocation deviations (not just +1 overrides)
+      const allocationDeviations = [];
+      if (plan && plan.allocations) {
+        for (const alloc of plan.allocations) {
+          if (alloc.original_sample_count !== undefined && alloc.sample_count !== alloc.original_sample_count) {
+            // Check if this is already in coverageOverrides
+            const isInCoverageOverrides = coverageOverrides.some(o => JSON.stringify(o.stratum) === JSON.stringify(alloc.stratum));
+            if (!isInCoverageOverrides) {
+              allocationDeviations.push({
+                stratum: { ...alloc.stratum },
+                original_calculated_allocation: alloc.original_sample_count,
+                adjusted_allocation: alloc.sample_count,
+                deviation: alloc.sample_count - alloc.original_sample_count,
+                justification: cfg.overrideJustification || 'Manual adjustment to calculated allocation',
+              });
+            }
+          }
+        }
+      }
+
+      // Calculate original planned size
+      const originalPlannedSize = plan && plan.allocations
+        ? plan.allocations.reduce((s, a) => s + (a.original_sample_count ?? a.sample_count), 0)
+        : plannedSize;
+
       return {
         generated_at_utc: new Date().toISOString(),
-        methodology: {
-          method: cfg.method,
-          confidence: cfg.confidence,
-          margin: cfg.margin,
-          expected_error_rate: cfg.expectedErrorRate,
-          sample_size_parameter: cfg.sampleSize ?? null,
-          sample_percentage_parameter: cfg.samplePercentage ?? null,
-          systematic_step_parameter: cfg.systematicStep ?? null,
-          seed: cfg.seed,
-          systematic_random_start: cfg.systematicRandomStart,
-          planned_sample_size: plannedSize,
-          override_justification: cfg.overrideJustification || null,
-        },
-        stratify_fields: cfg.stratifyFields,
-        source: {
+
+        // Section 1: Sample Source
+        sample_source: {
+          description: "Corporate Audit independently pulled the population derived from the Audit developed Tableau Dashboard, sourced from the Global Banking and Global Markets (GBGM) ALM System of Record (SOR) - AWARE (AIT #70743)",
           file_name: state.fileName,
           sheet_name: state.sheetName,
         },
-        population: {
-          size: population.length,
-          distribution: distribution(population, cfg.stratifyFields),
+
+        // Section 2: Define Population
+        define_population: {
+          total_population_size: population.length,
+          stratify_fields: cfg.stratifyFields,
+          population_distribution: distribution(population, cfg.stratifyFields),
+          strata_details: allocations.map(a => ({
+            stratum: a.stratum,
+            population_count: a.population_count,
+            share_of_population: a.share_of_population,
+          })),
         },
-        sample: {
-          size: sample.length,
-          distribution: distribution(sample, cfg.stratifyFields),
+
+        // Section 3: Rationale to Support the Sampling Technique
+        sampling_rationale: {
+          sampling_method: cfg.method,
+          confidence_level: cfg.confidence,
+          tolerable_error_rate: cfg.margin,
+          expected_error_rate: cfg.expectedErrorRate,
+          rationale_notes: {
+            confidence_level: `A ${(cfg.confidence * 100).toFixed(0)}% confidence level means we are ${(cfg.confidence * 100).toFixed(0)}% confident that the sample results reflect the population within the specified tolerable error rate.`,
+            tolerable_error_rate: `The tolerable error rate of ${(cfg.margin * 100).toFixed(1)}% represents the maximum acceptable deviation from the expected error rate.`,
+            expected_error_rate: `The expected error rate of ${(cfg.expectedErrorRate * 100).toFixed(1)}% is based on historical performance or professional judgment.`,
+            stratification: cfg.stratifyFields.length > 0
+              ? `Stratification by ${cfg.stratifyFields.join(', ')} ensures proportional representation across risk-relevant categories.`
+              : 'No stratification applied - population treated as homogeneous.',
+          },
         },
-        allocations,
-        coverage_overrides: coverageOverrides.length > 0 ? coverageOverrides : undefined,
+
+        // Section 4: Sample Selection Method
+        sample_selection_method: {
+          method: cfg.method,
+          seed: cfg.seed,
+          systematic_random_start: cfg.systematicRandomStart,
+          original_calculated_sample_size: originalPlannedSize,
+          final_sample_size: sample.length,
+          sample_size_parameter_override: cfg.sampleSize ?? null,
+          sample_percentage_parameter_override: cfg.samplePercentage ?? null,
+          systematic_step_parameter_override: cfg.systematicStep ?? null,
+          override_justification: cfg.overrideJustification || null,
+          sample_distribution: distribution(sample, cfg.stratifyFields),
+          allocations_by_stratum: allocations,
+          coverage_overrides: coverageOverrides.length > 0 ? coverageOverrides : undefined,
+          allocation_deviations: allocationDeviations.length > 0 ? allocationDeviations : undefined,
+        },
+
         sample_ids: cfg.idColumn ? sample.map(r => r[cfg.idColumn]) : undefined,
       };
     }
@@ -26832,17 +26993,28 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       }
       const cfg = state.lastConfig || readConfigForm();
       const s = state.summary;
+      const selection = s.sample_selection_method || {};
+      const pop = s.define_population || {};
+      const allocations = selection.allocations_by_stratum || [];
       const lines = [];
-      lines.push(`Selected ${s.sample.size} of ${s.population.size} using "${s.methodology.method}". Planned size: ${s.methodology.planned_sample_size}.`);
-      if (s.stratify_fields && s.stratify_fields.length) {
-        lines.push(`Stratified by: ${s.stratify_fields.join(', ')}`);
+      lines.push(`Selected ${selection.final_sample_size} of ${pop.total_population_size} using "${selection.method}". Calculated size: ${selection.original_calculated_sample_size}.`);
+      if (pop.stratify_fields && pop.stratify_fields.length) {
+        lines.push(`Stratified by: ${pop.stratify_fields.join(', ')}`);
       }
-      if (s.allocations && s.allocations.length) {
+      if (allocations.length) {
         lines.push('');
         lines.push('Per-stratum sample counts:');
-        s.allocations.forEach(a => {
+        allocations.forEach(a => {
           const desc = Object.entries(a.stratum || {}).map(([k, v]) => `${k}=${v === null ? 'NULL' : v}`).join(', ');
-          lines.push(`- ${desc}: ${a.sample_count} of ${a.population_count} (${(a.share_of_sample * 100).toFixed(1)}% of sample)`);
+          lines.push(`- ${desc}: ${a.sample_count} of ${a.population_count} (${((a.share_of_sample || 0) * 100).toFixed(1)}% of sample)`);
+        });
+      }
+      if (selection.allocation_deviations?.length) {
+        lines.push('');
+        lines.push('Allocation deviations from calculated:');
+        selection.allocation_deviations.forEach(d => {
+          const desc = Object.entries(d.stratum || {}).map(([k, v]) => `${k}=${v === null ? 'NULL' : v}`).join(', ');
+          lines.push(`- ${desc}: ${d.original_calculated_allocation} → ${d.adjusted_allocation} (${d.deviation > 0 ? '+' : ''}${d.deviation})`);
         });
       }
       summaryBox.textContent = lines.join('\n');
@@ -26984,22 +27156,37 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       }
     });
 
-    document.getElementById('configForm').addEventListener('submit', (e) => {
-      e.preventDefault();
-      if (!state.population.length) {
-        setStatus('Load an Excel file first.', 'danger');
-        return;
+    // Check if there are any overrides/deviations from calculated values
+    function hasAllocationOverrides() {
+      if (!state.plan || !state.plan.allocations) return false;
+      // Check for coverage overrides (+1 to zero strata)
+      if (state.plan.coverageOverrides && state.plan.coverageOverrides.length > 0) return true;
+      // Check for any manual allocation deviations
+      for (const alloc of state.plan.allocations) {
+        if (alloc.original_sample_count !== undefined && alloc.sample_count !== alloc.original_sample_count) {
+          return true;
+        }
       }
-      try {
+      // Check for sample size/percentage/step overrides
       const cfg = readConfigForm();
-      const fieldsKey = JSON.stringify(cfg.stratifyFields || []);
-      state.lastConfig = cfg;
-      if (!state.plan || state.plan.populationSize !== state.population.length || JSON.stringify(state.plan.stratifyFields || []) !== fieldsKey || state.plan.signature !== configSignature(cfg)) {
-        const plan = computePlan(state.population, cfg);
-        plan.populationSize = state.population.length;
-        state.plan = plan;
-        renderPlan();
+      if (cfg.sampleSize != null || cfg.samplePercentage != null || cfg.systematicStep != null) {
+        return true;
       }
+      return false;
+    }
+
+    // Execute the actual sampling
+    function executeSampling() {
+      try {
+        const cfg = readConfigForm();
+        const fieldsKey = JSON.stringify(cfg.stratifyFields || []);
+        state.lastConfig = cfg;
+        if (!state.plan || state.plan.populationSize !== state.population.length || JSON.stringify(state.plan.stratifyFields || []) !== fieldsKey || state.plan.signature !== configSignature(cfg)) {
+          const plan = computePlan(state.population, cfg);
+          plan.populationSize = state.population.length;
+          state.plan = plan;
+          renderPlan();
+        }
         const { sample, summary } = sampleData(state.population, cfg, state.plan);
         state.sample = sample;
         state.summary = summary;
@@ -27012,6 +27199,54 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
         console.error(err);
         setStatus(err.message || 'Sampling failed.', 'danger');
       }
+    }
+
+    // Modal elements
+    const overrideModal = document.getElementById('overrideConfirmModal');
+    const confirmGoBackBtn = document.getElementById('confirmGoBack');
+    const confirmProceedBtn = document.getElementById('confirmProceed');
+
+    function showOverrideModal() {
+      if (overrideModal) overrideModal.classList.add('visible');
+    }
+
+    function hideOverrideModal() {
+      if (overrideModal) overrideModal.classList.remove('visible');
+    }
+
+    if (confirmGoBackBtn) {
+      confirmGoBackBtn.addEventListener('click', () => {
+        hideOverrideModal();
+      });
+    }
+
+    if (confirmProceedBtn) {
+      confirmProceedBtn.addEventListener('click', () => {
+        hideOverrideModal();
+        executeSampling();
+      });
+    }
+
+    // Close modal on overlay click
+    if (overrideModal) {
+      overrideModal.addEventListener('click', (e) => {
+        if (e.target === overrideModal) hideOverrideModal();
+      });
+    }
+
+    document.getElementById('configForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!state.population.length) {
+        setStatus('Load an Excel file first.', 'danger');
+        return;
+      }
+      // Check if there are overrides - if so, show confirmation modal
+      if (hasAllocationOverrides()) {
+        showOverrideModal();
+        return;
+      }
+      // No overrides, proceed directly
+      executeSampling();
     });
 
     if (stratifySelect) {
@@ -27075,7 +27310,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
     });
 
         function summarizeAllocationsText(summary) {
-      const allocations = summary.allocations || [];
+      const allocations = summary.sample_selection_method?.allocations_by_stratum || [];
       if (!allocations.length) return [];
       const lines = ['Per-stratum allocation:'];
       allocations.forEach(a => {
@@ -27086,40 +27321,52 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
     }
 
     function generateLocalReport(summary) {
-      const method = summary.methodology || {};
-      const source = summary.source || {};
-      const pop = summary.population || {};
-      const sample = summary.sample || {};
+      const source = summary.sample_source || {};
+      const pop = summary.define_population || {};
+      const rationale = summary.sampling_rationale || {};
+      const selection = summary.sample_selection_method || {};
       const pct = (v) => Number.isFinite(v) ? `${(v * 100).toFixed(2)}%` : 'n/a';
       const plain = (v) => (v === null || v === undefined || v === '') ? 'n/a' : v;
       const lines = [];
-      lines.push('Population');
-      lines.push(`- Source: ${plain(source.file_name)} (sheet: ${plain(source.sheet_name)})`);
-      lines.push(`- Size (N): ${pop.size ?? 0}`);
-      if (Array.isArray(pop.distribution) && pop.distribution.length) {
-        lines.push('- Stratification:');
-        pop.distribution.slice(0, 10).forEach(d => {
+
+      lines.push('Sample Source');
+      lines.push(`- ${plain(source.description)}`);
+      lines.push(`- File: ${plain(source.file_name)} (sheet: ${plain(source.sheet_name)})`);
+
+      lines.push('');
+      lines.push('Define Population');
+      lines.push(`- Size (N): ${pop.total_population_size ?? 0}`);
+      lines.push(`- Stratify fields: ${(pop.stratify_fields || []).join(', ') || 'None'}`);
+      if (Array.isArray(pop.population_distribution) && pop.population_distribution.length) {
+        lines.push('- Population distribution:');
+        pop.population_distribution.slice(0, 10).forEach(d => {
           const desc = Object.entries(d.stratum || {}).map(([k, v]) => `${k}=${v === null ? 'NULL' : v}`).join(', ') || '(all)';
           lines.push(`  - ${desc}: ${d.count} (${pct(d.share || 0)})`);
         });
-        if (pop.distribution.length > 10) lines.push(`  - ...${pop.distribution.length - 10} more strata not shown`);
+        if (pop.population_distribution.length > 10) lines.push(`  - ...${pop.population_distribution.length - 10} more strata not shown`);
       }
 
       lines.push('');
-      lines.push('Sample');
-      lines.push(`- Planned size (n): ${plain(method.planned_sample_size)}`);
-      lines.push(`- Actual sample size: ${plain(sample.size)}`);
-      lines.push(`- Method: ${plain(method.method)}; confidence=${pct(method.confidence)} margin=${pct(method.margin)} expected_error=${pct(method.expected_error_rate)}`);
-      lines.push(`- Stratify fields: ${(summary.stratify_fields || []).join(', ') || 'None'}`);
-      lines.push(...summarizeAllocationsText(summary));
+      lines.push('Rationale to Support the Sampling Technique');
+      lines.push(`- Sampling method: ${plain(rationale.sampling_method)}`);
+      lines.push(`- Confidence level: ${pct(rationale.confidence_level)}`);
+      lines.push(`- Tolerable error rate: ${pct(rationale.tolerable_error_rate)}`);
+      lines.push(`- Expected error rate: ${pct(rationale.expected_error_rate)}`);
 
       lines.push('');
-      lines.push('Parameters');
-      lines.push(`- Sample size override: ${plain(method.sample_size_parameter)}`);
-      lines.push(`- Sample pct parameter: ${plain(method.sample_percentage_parameter)}`);
-      lines.push(`- Systematic step: ${plain(method.systematic_step_parameter)}`);
-      lines.push(`- Seed: ${plain(method.seed ?? 42)}; random start: ${method.systematic_random_start ? 'Yes' : 'No'}`);
-      lines.push(`- Override justification: ${plain(method.override_justification) || 'None provided'}`);
+      lines.push('Sample Selection Method');
+      lines.push(`- Method: ${plain(selection.method)}`);
+      lines.push(`- Original calculated sample size: ${plain(selection.original_calculated_sample_size)}`);
+      lines.push(`- Final sample size: ${plain(selection.final_sample_size)}`);
+      lines.push(`- Seed: ${plain(selection.seed ?? 42)}; random start: ${selection.systematic_random_start ? 'Yes' : 'No'}`);
+      lines.push(...summarizeAllocationsText(summary));
+      if (selection.coverage_overrides?.length) {
+        lines.push('- Coverage overrides applied: ' + selection.coverage_overrides.length);
+      }
+      if (selection.allocation_deviations?.length) {
+        lines.push('- Allocation deviations: ' + selection.allocation_deviations.length);
+      }
+      lines.push(`- Override justification: ${plain(selection.override_justification) || 'None provided'}`);
 
       lines.push('');
       lines.push('Notes');
@@ -27130,30 +27377,53 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
     // Prompt hardwired text and download
     const SUMMARY_PROMPT = `You are an AML Audit documentation assistant. Using ONLY the information contained in the JSON pasted below (do not assume anything not explicitly present), write a narrative sampling summary suitable for inclusion in an AML audit workpaper.
 
-Goals:
-1) Describe the POPULATION: what it is, total population size (N), source file/sheet if provided, key characteristics, and the distribution of any stratification field(s) (counts and % of N).
-2) Describe the SAMPLE: planned sample size (n), how it was selected, the sample allocation by stratum (counts and % of n), and where applicable note that specific sample IDs are retained for traceability (do not list all IDs unless n ≤ 20).
-3) Explain the RATIONALE for EACH sampling parameter individually, in audit terms and plain English. At minimum address:
-   - sampling_method
-   - confidence_level
-   - margin_of_error
-   - expected_error_rate
-   - planned_sample_size (and how it relates to confidence/margin/expected error and finite population)
-   - stratify_fields (why stratify on these for AML risk/regulatory coverage)
-   - allocation approach implied by the stratum sizes vs allocations (e.g., proportional)
-   - systematic_random_start (why it helps reduce selection bias)
-   - random_seed (reproducibility/audit trail)
-   - coverage_overrides (if present, these are user-initiated overrides where strata that had 0 samples allocated by proportional allocation were manually adjusted to 1 sample via the "Add +1 to zero strata" button; note the original calculated allocation was 0, the justification provided, and the impact on the total sample size)
-   - any parameters that are null (what that implies and that no override was used)
-4) Provide a brief “AML audit context” paragraph tying the sampling design to typical AML objectives (e.g., coverage across jurisdictions, consistency with risk-based testing, defensibility of selection).
-5) Include a short limitations/assumptions section that is explicitly grounded in what the JSON does/does not say (e.g., if error definition, time period, or ordering of records is not provided, state that it is not specified).
+The JSON is structured into four sections. Your narrative MUST follow the same structure with corresponding headings.
+
+SECTION 1 - SAMPLE SOURCE:
+- Use the "sample_source.description" text EXACTLY and VERBATIM - do not paraphrase or modify this language in any way.
+- Include the file name and sheet name as supporting details.
+
+SECTION 2 - DEFINE POPULATION:
+- State the total population size (N) from "define_population.total_population_size".
+- List all stratification fields from "define_population.stratify_fields".
+- For each stratum in "define_population.strata_details", document:
+  - The stratum characteristics
+  - The population count for that stratum
+  - The percentage of total population (share_of_population)
+
+SECTION 3 - RATIONALE TO SUPPORT THE SAMPLING TECHNIQUE:
+- Use the "sampling_rationale" section to explain WHY each parameter was chosen.
+- Include the rationale_notes text VERBATIM for each parameter:
+  - confidence_level and its rationale
+  - tolerable_error_rate (formerly margin of error) and its rationale
+  - expected_error_rate and its rationale
+  - stratification rationale
+- Explain how these parameters work together to produce a statistically valid sample.
+
+SECTION 4 - SAMPLE SELECTION METHOD:
+- Document the sampling method used (systematic or random).
+- State the original calculated sample size vs. the final sample size.
+- Document the seed and systematic_random_start settings for reproducibility.
+- For each stratum, show the allocation (sample count, share of sample).
+- CRITICAL: If "coverage_overrides" is present, document EACH override:
+  - Original calculated allocation (was 0)
+  - Adjusted allocation (to 1)
+  - The justification text VERBATIM
+- CRITICAL: If "allocation_deviations" is present, document EACH deviation:
+  - The stratum affected
+  - Original calculated allocation
+  - Adjusted allocation
+  - The deviation amount (+/- difference)
+  - The justification text VERBATIM
+- Note any override_justification if sample size parameters were manually adjusted.
 
 Formatting requirements:
 - Write in complete sentences and a professional audit memo tone.
-- Use clear headings (Population, Sample, Sampling Parameters and Rationale, AML Audit Context, Limitations).
+- Use these exact headings: "Sample Source", "Define Population", "Rationale to Support the Sampling Technique", "Sample Selection Method".
 - Where helpful, include simple calculations (percentages, proportionality checks). Show numbers; avoid overly technical formulas.
 - Do not cite external standards or regulators unless the JSON mentions them.
-- Do not fabricate details about AML program, customer types, transaction volumes, or time periods unless explicitly stated in the JSON.`;
+- Do not fabricate details about AML program, customer types, transaction volumes, or time periods unless explicitly stated in the JSON.
+- Any text marked as "VERBATIM" in the JSON rationale_notes or justification fields MUST be included word-for-word in your output.`;
 
     if (promptTextEl) {
       promptTextEl.value = SUMMARY_PROMPT;
