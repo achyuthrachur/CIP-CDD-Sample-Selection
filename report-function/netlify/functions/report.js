@@ -26,16 +26,17 @@ export async function handler(event) {
 
     const prompt = `You are an expert internal audit / risk / CIP CDD sampling analyst focusing on onboarding data (not KYC).
 
-You will be given a JSON summary of a sampling exercise. It may contain:
-- methodology: { method, confidence, margin, expected_error_rate, planned_sample_size, seed, systematic_random_start, ... }
+You will be given a JSON summary of a sampling exercise. It contains:
+- methodology: { method, confidence, margin, expected_error_rate, planned_sample_size, seed, systematic_random_start }
 - stratify_fields: e.g., ["Jurisdiction"]
 - source: { file_name, sheet_name }
 - population: { size, distribution: [{ stratum: {...}, count, share }, ...] }
 - sample: { size, distribution: [{ stratum: {...}, count, share }, ...] }
-- allocations: [{ stratum: {...}, population_count, sample_count, share_of_population, share_of_sample }, ...]
+- allocations: [{ stratum: {...}, population_count, sample_count, share_of_population, share_of_sample, proportional_allocation, allocation_difference }, ...]
+- overrides: { has_overrides, justification, parameter_overrides: {...}, coverage_overrides: [...], allocation_adjustments: [...] }
 - sample_ids: [list of sampled record IDs]
 
-Produce a clear, professional narrative report in plain text (no Markdown, no tables, no # or * characters, no bold/italic). Use simple numbered sections and plain lines. Convert proportions to percentages where helpful. Do NOT include the raw JSON in the report; treat it as back-end data only. Use only numbers present in the JSON.
+Produce a clear, professional narrative report in plain text (no Markdown, no tables, no # or * characters, no bold/italic). Use simple numbered sections and plain lines. Convert proportions to percentages where helpful. Do NOT include the raw data in the report; treat it as back-end data only. Use only numbers present in the data.
 
 Use these section headings (plain text):
 1. Objective and context
@@ -44,13 +45,20 @@ Use these section headings (plain text):
 4. Sampling rationale
 5. Sample summary
 6. Allocation analysis and representativeness
-7. Limitations and considerations
-8. Conclusion
+7. Overrides and adjustments (only if overrides.has_overrides is true)
+8. Limitations and considerations
+9. Conclusion
 
 For distributions, list each stratum on its own line like:
 Stratum: <values> | Count: <n> | Population share: <p%> (and Sample share: <p%> if available)
 
-Focus on onboarding data and control testing (not KYC). Write in audit-friendly language.
+When describing allocation differences, reference the proportional_allocation and allocation_difference fields to explain deviations from pure proportional allocation.
+
+If overrides were applied, describe the justification, any parameter overrides (population_size, sample_size, sample_percentage, systematic_step), coverage overrides, and allocation adjustments.
+
+IMPORTANT: When describing what is not available or not specified, use natural phrasing like "was not specified", "was not provided", or "is not available". Do NOT use phrases like "the JSON provided" or "in the JSON" - write as if describing the sampling exercise directly.
+
+Write in complete paragraphs with multiple sentences per section. Focus on onboarding data and control testing (not KYC). Write in audit-friendly language.
 
 JSON data:
 ${JSON.stringify(summary, null, 2)}`;

@@ -1402,6 +1402,7 @@
           stratum,
           population_count: arr.length,
           sample_count: sampleCount,
+          proportional_allocation: sampleCount, // Store original proportional allocation for tracking differences
         };
       });
       const plannedSize = allocations.reduce((s, a) => s + a.sample_count, 0);
@@ -1544,6 +1545,48 @@
 
     function buildSummary(population, sample, allocations, cfg, plannedSize, plan) {
       const coverageOverrides = plan && plan.coverageOverrides ? plan.coverageOverrides : [];
+      const planAllocations = plan && plan.allocations ? plan.allocations : [];
+
+      // Build allocations with difference tracking
+      const allocationsWithDiff = allocations.map(alloc => {
+        // Find matching plan allocation to get proportional allocation
+        const planAlloc = planAllocations.find(p => JSON.stringify(p.stratum) === JSON.stringify(alloc.stratum));
+        const proportionalAllocation = planAlloc ? planAlloc.proportional_allocation : alloc.sample_count;
+        const allocationDifference = alloc.sample_count - proportionalAllocation;
+
+        return {
+          ...alloc,
+          proportional_allocation: proportionalAllocation,
+          allocation_difference: allocationDifference,
+        };
+      });
+
+      // Build consolidated overrides section
+      const overridePop = populationOverrideInput && populationOverrideInput.value ? parseInt(populationOverrideInput.value, 10) : null;
+      const hasPopulationOverride = Number.isFinite(overridePop) && overridePop > 0;
+      const hasSampleSizeOverride = cfg.sampleSize != null;
+      const hasSamplePercentageOverride = cfg.samplePercentage != null;
+      const hasSystematicStepOverride = cfg.systematicStep != null;
+      const hasAnyOverride = hasPopulationOverride || hasSampleSizeOverride || hasSamplePercentageOverride || hasSystematicStepOverride || coverageOverrides.length > 0;
+
+      const overridesSection = {
+        has_overrides: hasAnyOverride,
+        justification: cfg.overrideJustification || null,
+        parameter_overrides: {
+          population_size: hasPopulationOverride ? { applied: true, value: overridePop, original: population.length } : { applied: false },
+          sample_size: hasSampleSizeOverride ? { applied: true, value: cfg.sampleSize } : { applied: false },
+          sample_percentage: hasSamplePercentageOverride ? { applied: true, value: cfg.samplePercentage } : { applied: false },
+          systematic_step: hasSystematicStepOverride ? { applied: true, value: cfg.systematicStep } : { applied: false },
+        },
+        coverage_overrides: coverageOverrides.length > 0 ? coverageOverrides : [],
+        allocation_adjustments: allocationsWithDiff.filter(a => a.allocation_difference !== 0).map(a => ({
+          stratum: a.stratum,
+          proportional_allocation: a.proportional_allocation,
+          actual_allocation: a.sample_count,
+          difference: a.allocation_difference,
+        })),
+      };
+
       return {
         generated_at_utc: new Date().toISOString(),
         methodology: {
@@ -1551,13 +1594,9 @@
           confidence: cfg.confidence,
           margin: cfg.margin,
           expected_error_rate: cfg.expectedErrorRate,
-          sample_size_parameter: cfg.sampleSize ?? null,
-          sample_percentage_parameter: cfg.samplePercentage ?? null,
-          systematic_step_parameter: cfg.systematicStep ?? null,
           seed: cfg.seed,
           systematic_random_start: cfg.systematicRandomStart,
           planned_sample_size: plannedSize,
-          override_justification: cfg.overrideJustification || null,
         },
         stratify_fields: cfg.stratifyFields,
         source: {
@@ -1572,8 +1611,8 @@
           size: sample.length,
           distribution: distribution(sample, cfg.stratifyFields),
         },
-        allocations,
-        coverage_overrides: coverageOverrides.length > 0 ? coverageOverrides : undefined,
+        allocations: allocationsWithDiff,
+        overrides: overridesSection,
         sample_ids: cfg.idColumn ? sample.map(r => r[cfg.idColumn]) : undefined,
       };
     }
@@ -1885,20 +1924,26 @@ Goals:
    - expected_error_rate
    - planned_sample_size (and how it relates to confidence/margin/expected error and finite population)
    - stratify_fields (why stratify on these for AML risk/regulatory coverage)
-   - allocation approach implied by the stratum sizes vs allocations (e.g., proportional)
+   - allocation approach implied by the stratum sizes vs allocations (e.g., proportional). Reference proportional_allocation and allocation_difference fields in allocations to explain any deviations from pure proportional allocation.
    - systematic_random_start (why it helps reduce selection bias)
    - random_seed (reproducibility/audit trail)
-   - coverage_overrides (if present, these are user-initiated overrides where strata that had 0 samples allocated by proportional allocation were manually adjusted to 1 sample via the "Add +1 to zero strata" button; note the original calculated allocation was 0, the justification provided, and the impact on the total sample size)
-   - any parameters that are null (what that implies and that no override was used)
-4) Provide a brief “AML audit context” paragraph tying the sampling design to typical AML objectives (e.g., coverage across jurisdictions, consistency with risk-based testing, defensibility of selection).
-5) Include a short limitations/assumptions section that is explicitly grounded in what the JSON does/does not say (e.g., if error definition, time period, or ordering of records is not provided, state that it is not specified).
+   - any parameters that are null or not present (simply state what was not specified without referencing the source)
+4) Provide a brief "AML audit context" paragraph tying the sampling design to typical AML objectives (e.g., coverage across jurisdictions, consistency with risk-based testing, defensibility of selection).
+5) Include a short limitations/assumptions section that is explicitly grounded in what is or is not present in the data (e.g., if error definition, time period, or ordering of records is not available, state that it was not specified).
+6) If the "overrides" section indicates any overrides were applied (has_overrides = true), include a dedicated "Overrides" section that describes:
+   - The overall justification provided for overrides
+   - Any parameter overrides (population_size, sample_size, sample_percentage, systematic_step) that were applied, noting the override value and original value where available
+   - Any coverage overrides (strata that had 0 proportional allocation but were adjusted to 1 for coverage)
+   - Any allocation adjustments showing the proportional_allocation vs actual_allocation and the difference
 
 Formatting requirements:
-- Write in complete sentences and a professional audit memo tone.
-- Use clear headings (Population, Sample, Sampling Parameters and Rationale, AML Audit Context, Limitations).
+- Write in complete paragraphs with multiple sentences per paragraph. Each section should have substantive narrative content, not just single sentences.
+- Use a professional audit memo tone throughout.
+- Use clear headings (Population, Sample, Sampling Parameters and Rationale, Overrides (if applicable), AML Audit Context, Limitations).
 - Where helpful, include simple calculations (percentages, proportionality checks). Show numbers; avoid overly technical formulas.
-- Do not cite external standards or regulators unless the JSON mentions them.
-- Do not fabricate details about AML program, customer types, transaction volumes, or time periods unless explicitly stated in the JSON.`;
+- Do not cite external standards or regulators unless they are mentioned in the data.
+- Do not fabricate details about AML program, customer types, transaction volumes, or time periods unless explicitly stated.
+- IMPORTANT: When describing what is not available or not specified, use natural phrasing like "was not specified", "was not provided", or "is not available". Do NOT use phrases like "the JSON provided" or "in the JSON" - write as if you are describing the sampling exercise directly, not the data format.`;
 
     if (promptTextEl) {
       promptTextEl.value = SUMMARY_PROMPT;

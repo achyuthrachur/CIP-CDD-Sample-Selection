@@ -26863,31 +26863,51 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
 
     function buildSummary(population, sample, allocations, cfg, plannedSize, plan) {
       const coverageOverrides = plan && plan.coverageOverrides ? plan.coverageOverrides : [];
+      const planAllocations = plan && plan.allocations ? plan.allocations : [];
 
-      // Track ALL allocation deviations (not just +1 overrides)
-      const allocationDeviations = [];
-      if (plan && plan.allocations) {
-        for (const alloc of plan.allocations) {
-          if (alloc.original_sample_count !== undefined && alloc.sample_count !== alloc.original_sample_count) {
-            // Check if this is already in coverageOverrides
-            const isInCoverageOverrides = coverageOverrides.some(o => JSON.stringify(o.stratum) === JSON.stringify(alloc.stratum));
-            if (!isInCoverageOverrides) {
-              allocationDeviations.push({
-                stratum: { ...alloc.stratum },
-                original_calculated_allocation: alloc.original_sample_count,
-                adjusted_allocation: alloc.sample_count,
-                deviation: alloc.sample_count - alloc.original_sample_count,
-                justification: cfg.overrideJustification || 'Manual adjustment to calculated allocation',
-              });
-            }
-          }
-        }
-      }
+      // Build allocations with difference tracking
+      const allocationsWithDiff = allocations.map(alloc => {
+        const planAlloc = planAllocations.find(p => JSON.stringify(p.stratum) === JSON.stringify(alloc.stratum));
+        const proportionalAllocation = planAlloc ? planAlloc.original_sample_count : alloc.sample_count;
+        const allocationDifference = alloc.sample_count - proportionalAllocation;
+
+        return {
+          ...alloc,
+          proportional_allocation: proportionalAllocation,
+          allocation_difference: allocationDifference,
+        };
+      });
 
       // Calculate original planned size
       const originalPlannedSize = plan && plan.allocations
         ? plan.allocations.reduce((s, a) => s + (a.original_sample_count ?? a.sample_count), 0)
         : plannedSize;
+
+      // Build consolidated overrides section
+      const overridePop = populationOverrideInput && populationOverrideInput.value ? parseInt(populationOverrideInput.value, 10) : null;
+      const hasPopulationOverride = Number.isFinite(overridePop) && overridePop > 0;
+      const hasSampleSizeOverride = cfg.sampleSize != null;
+      const hasSamplePercentageOverride = cfg.samplePercentage != null;
+      const hasSystematicStepOverride = cfg.systematicStep != null;
+      const hasAnyOverride = hasPopulationOverride || hasSampleSizeOverride || hasSamplePercentageOverride || hasSystematicStepOverride || coverageOverrides.length > 0;
+
+      const overridesSection = {
+        has_overrides: hasAnyOverride,
+        justification: cfg.overrideJustification || null,
+        parameter_overrides: {
+          population_size: hasPopulationOverride ? { applied: true, value: overridePop, original: population.length } : { applied: false },
+          sample_size: hasSampleSizeOverride ? { applied: true, value: cfg.sampleSize } : { applied: false },
+          sample_percentage: hasSamplePercentageOverride ? { applied: true, value: cfg.samplePercentage } : { applied: false },
+          systematic_step: hasSystematicStepOverride ? { applied: true, value: cfg.systematicStep } : { applied: false },
+        },
+        coverage_overrides: coverageOverrides.length > 0 ? coverageOverrides : [],
+        allocation_adjustments: allocationsWithDiff.filter(a => a.allocation_difference !== 0).map(a => ({
+          stratum: a.stratum,
+          proportional_allocation: a.proportional_allocation,
+          actual_allocation: a.sample_count,
+          difference: a.allocation_difference,
+        })),
+      };
 
       return {
         generated_at_utc: new Date().toISOString(),
@@ -26904,7 +26924,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
           total_population_size: population.length,
           stratify_fields: cfg.stratifyFields,
           population_distribution: distribution(population, cfg.stratifyFields),
-          strata_details: allocations.map(a => ({
+          strata_details: allocationsWithDiff.map(a => ({
             stratum: a.stratum,
             population_count: a.population_count,
             share_of_population: a.share_of_population,
@@ -26934,15 +26954,12 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
           systematic_random_start: cfg.systematicRandomStart,
           original_calculated_sample_size: originalPlannedSize,
           final_sample_size: sample.length,
-          sample_size_parameter_override: cfg.sampleSize ?? null,
-          sample_percentage_parameter_override: cfg.samplePercentage ?? null,
-          systematic_step_parameter_override: cfg.systematicStep ?? null,
-          override_justification: cfg.overrideJustification || null,
           sample_distribution: distribution(sample, cfg.stratifyFields),
-          allocations_by_stratum: allocations,
-          coverage_overrides: coverageOverrides.length > 0 ? coverageOverrides : undefined,
-          allocation_deviations: allocationDeviations.length > 0 ? allocationDeviations : undefined,
+          allocations_by_stratum: allocationsWithDiff,
         },
+
+        // Consolidated Overrides Section
+        overrides: overridesSection,
 
         sample_ids: cfg.idColumn ? sample.map(r => r[cfg.idColumn]) : undefined,
       };
@@ -27383,55 +27400,49 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
     }
 
     // Prompt hardwired text and download
-    const SUMMARY_PROMPT = `You are an AML Audit documentation assistant. Using ONLY the information contained in the JSON pasted below (do not assume anything not explicitly present), write a narrative sampling summary suitable for inclusion in an AML audit workpaper.
+    const SUMMARY_PROMPT = `You are an AML Audit documentation assistant. Using ONLY the information provided below (do not assume anything not explicitly present), write a narrative sampling summary suitable for inclusion in an AML audit workpaper.
 
-The JSON is structured into four sections. Your narrative MUST follow the same structure with corresponding headings.
+The data is structured into four main sections plus an overrides section. Your narrative MUST follow the same structure with corresponding headings.
 
 SECTION 1 - SAMPLE SOURCE:
-- Use the "sample_source.description" text EXACTLY and VERBATIM - do not paraphrase or modify this language in any way.
-- Include the file name and sheet name as supporting details.
+- Use the sample_source description text EXACTLY and VERBATIM - do not paraphrase or modify this language in any way.
+- Include the file name and sheet name as supporting details in a follow-up sentence.
 
 SECTION 2 - DEFINE POPULATION:
-- State the total population size (N) from "define_population.total_population_size".
-- List all stratification fields from "define_population.stratify_fields".
-- For each stratum in "define_population.strata_details", document:
-  - The stratum characteristics
-  - The population count for that stratum
-  - The percentage of total population (share_of_population)
+- State the total population size (N) and describe the population composition in a substantive paragraph.
+- List all stratification fields and explain why stratification was applied.
+- For each stratum in strata_details, document the stratum characteristics, population count, and percentage of total population (share_of_population). Present this as flowing narrative text, not a list.
 
 SECTION 3 - RATIONALE TO SUPPORT THE SAMPLING TECHNIQUE:
-- Use the "sampling_rationale" section to explain WHY each parameter was chosen.
+- Explain WHY each parameter was chosen using the sampling_rationale section.
 - Include the rationale_notes text VERBATIM for each parameter:
   - confidence_level and its rationale
   - tolerable_error_rate (formerly margin of error) and its rationale
   - expected_error_rate and its rationale
   - stratification rationale
-- Explain how these parameters work together to produce a statistically valid sample.
+- Write a paragraph explaining how these parameters work together to produce a statistically valid sample.
 
 SECTION 4 - SAMPLE SELECTION METHOD:
-- Document the sampling method used (systematic or random).
+- Document the sampling method used (systematic or random) and explain its application.
 - State the original calculated sample size vs. the final sample size.
 - Document the seed and systematic_random_start settings for reproducibility.
-- For each stratum, show the allocation (sample count, share of sample).
-- CRITICAL: If "coverage_overrides" is present, document EACH override:
-  - Original calculated allocation (was 0)
-  - Adjusted allocation (to 1)
-  - The justification text VERBATIM
-- CRITICAL: If "allocation_deviations" is present, document EACH deviation:
-  - The stratum affected
-  - Original calculated allocation
-  - Adjusted allocation
-  - The deviation amount (+/- difference)
-  - The justification text VERBATIM
-- Note any override_justification if sample size parameters were manually adjusted.
+- For each stratum, describe the allocation including sample count, share of sample, proportional_allocation, and allocation_difference. If allocation_difference is non-zero, explain the deviation.
+
+SECTION 5 - OVERRIDES (only include if overrides.has_overrides is true):
+- State the overall justification for any overrides applied.
+- Document any parameter_overrides (population_size, sample_size, sample_percentage, systematic_step) that were applied, noting both the override value and original value where available.
+- Document any coverage_overrides (strata adjusted from 0 to 1 for coverage), including the original allocation, adjusted allocation, and justification VERBATIM.
+- Document any allocation_adjustments showing the proportional_allocation vs actual_allocation and the difference.
 
 Formatting requirements:
-- Write in complete sentences and a professional audit memo tone.
-- Use these exact headings: "Sample Source", "Define Population", "Rationale to Support the Sampling Technique", "Sample Selection Method".
+- Write in complete paragraphs with multiple sentences per paragraph. Each section should have substantive narrative content.
+- Use a professional audit memo tone throughout.
+- Use these exact headings: "Sample Source", "Define Population", "Rationale to Support the Sampling Technique", "Sample Selection Method", "Overrides" (if applicable).
 - Where helpful, include simple calculations (percentages, proportionality checks). Show numbers; avoid overly technical formulas.
-- Do not cite external standards or regulators unless the JSON mentions them.
-- Do not fabricate details about AML program, customer types, transaction volumes, or time periods unless explicitly stated in the JSON.
-- Any text marked as "VERBATIM" in the JSON rationale_notes or justification fields MUST be included word-for-word in your output.`;
+- Do not cite external standards or regulators unless they are mentioned in the data.
+- Do not fabricate details about AML program, customer types, transaction volumes, or time periods unless explicitly stated.
+- Any text marked as "VERBATIM" in rationale_notes or justification fields MUST be included word-for-word in your output.
+- IMPORTANT: When describing what is not available or not specified, use natural phrasing like "was not specified", "was not provided", or "is not available". Do NOT use phrases like "the JSON provided" or "in the JSON" - write as if describing the sampling exercise directly.`;
 
     if (promptTextEl) {
       promptTextEl.value = SUMMARY_PROMPT;
