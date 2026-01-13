@@ -25533,15 +25533,19 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
     }
 
     .confirm-modal {
-      background: var(--card-bg);
+      background: #ffffff;
       border: 2px solid var(--warning, #f59e0b);
       border-radius: 12px;
       padding: 24px 32px;
       max-width: 420px;
       width: 90%;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px var(--border-color);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), 0 4px 20px rgba(0, 0, 0, 0.2);
       transform: scale(0.9) translateY(-20px);
       transition: transform 0.2s ease;
+    }
+
+    [data-theme="dark"] .confirm-modal {
+      background: #1e293b;
     }
 
     .confirm-overlay.visible .confirm-modal {
@@ -25563,9 +25567,13 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
 
     .confirm-modal p {
       margin: 0 0 24px 0;
-      color: var(--text-secondary);
+      color: #475569;
       text-align: center;
       line-height: 1.5;
+    }
+
+    [data-theme="dark"] .confirm-modal p {
+      color: #94a3b8;
     }
 
     .confirm-modal .confirm-buttons {
@@ -26791,6 +26799,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
           }
           state.plan.coverageOverrides = (state.plan.coverageOverrides || []).concat(overrides);
           renderPlan();
+          updateJustificationVisibility();
         });
       }
 
@@ -26803,6 +26812,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
           if (!alloc) return;
           alloc.sample_count = Math.min(alloc.population_count, val);
           renderPlan();
+          updateJustificationVisibility();
         });
       });
       runBtn.disabled = total <= 0;
@@ -27094,9 +27104,26 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       return true;
     }
 
-    function updateJustificationVisibility() {
+    function hasAnyOverrides() {
       const cfg = readConfigForm();
-      const show = hasOverrides(cfg);
+      // Check form-level overrides
+      if (hasOverrides(cfg)) return true;
+      // Check allocation overrides
+      if (state.plan && state.plan.allocations) {
+        // Check for coverage overrides (+1 to zero strata)
+        if (state.plan.coverageOverrides && state.plan.coverageOverrides.length > 0) return true;
+        // Check for any manual allocation deviations
+        for (const alloc of state.plan.allocations) {
+          if (alloc.original_sample_count !== undefined && alloc.sample_count !== alloc.original_sample_count) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    function updateJustificationVisibility() {
+      const show = hasAnyOverrides();
       if (overrideJustificationWrapper) {
         overrideJustificationWrapper.style.display = show ? 'block' : 'none';
       }
@@ -27155,25 +27182,6 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
         setStatus(err.message || 'Planning failed.', 'danger');
       }
     });
-
-    // Check if there are any overrides/deviations from calculated values
-    function hasAllocationOverrides() {
-      if (!state.plan || !state.plan.allocations) return false;
-      // Check for coverage overrides (+1 to zero strata)
-      if (state.plan.coverageOverrides && state.plan.coverageOverrides.length > 0) return true;
-      // Check for any manual allocation deviations
-      for (const alloc of state.plan.allocations) {
-        if (alloc.original_sample_count !== undefined && alloc.sample_count !== alloc.original_sample_count) {
-          return true;
-        }
-      }
-      // Check for sample size/percentage/step overrides
-      const cfg = readConfigForm();
-      if (cfg.sampleSize != null || cfg.samplePercentage != null || cfg.systematicStep != null) {
-        return true;
-      }
-      return false;
-    }
 
     // Execute the actual sampling
     function executeSampling() {
@@ -27241,7 +27249,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
         return;
       }
       // Check if there are overrides - if so, show confirmation modal
-      if (hasAllocationOverrides()) {
+      if (hasAnyOverrides()) {
         showOverrideModal();
         return;
       }
