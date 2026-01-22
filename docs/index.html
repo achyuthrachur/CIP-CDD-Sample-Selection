@@ -690,12 +690,12 @@
         <div class="summary" id="summaryBox">Load data and run sampling to see results.</div>
         <div id="overrideNote" class="hint"></div>
         <div style="margin-top:12px;">
-          <h3>Summary Prompt</h3>
-          <textarea id="promptText" style="width:100%;min-height:220px;white-space:pre-wrap;" readonly></textarea>
-          <div class="buttons tight" style="margin-top:8px;">
-            <button type="button" id="copyPrompt">Copy Prompt</button>
+          <h3>AI-Generated Summary</h3>
+          <div class="buttons tight" style="margin-bottom:8px;">
+            <button type="button" id="genSummaryBtn" disabled>Generate AI Summary</button>
           </div>
-          <div class="hint" id="copyStatus"></div>
+          <div class="hint" id="summaryStatus"></div>
+          <textarea id="aiSummaryText" style="width:100%;min-height:280px;white-space:pre-wrap;" readonly placeholder="Generate a sample first, then click 'Generate AI Summary' to create an AI-written narrative report."></textarea>
         </div>
       </section>
     </div>
@@ -747,10 +747,11 @@
     const statusEl = document.getElementById('status');
     const summaryBox = document.getElementById('summaryBox');
     const overrideNoteEl = document.getElementById('overrideNote');
-    const promptTextEl = document.getElementById('promptText');
-    const copyPromptBtn = document.getElementById('copyPrompt');
-    const copyStatusEl = document.getElementById('copyStatus');
+    const genSummaryBtn = document.getElementById('genSummaryBtn');
+    const aiSummaryTextEl = document.getElementById('aiSummaryText');
+    const summaryStatusEl = document.getElementById('summaryStatus');
     const editRandomizerToggle = document.getElementById('editRandomizerToggle');
+    const REPORT_FUNCTION_URL = 'https://frolicking-dusk-5c6419.netlify.app/.netlify/functions/report';
     const randomizerSection = document.getElementById('randomizerSection');
     const overrideJustificationEl = document.getElementById('overrideJustification');
     const overrideJustificationWrapper = document.getElementById('overrideJustificationWrapper');
@@ -1670,11 +1671,14 @@
         if (overrideNoteEl) overrideNoteEl.textContent = '';
         downloadCsvBtn.disabled = true;
         downloadJsonBtn.disabled = true;
+        if (genSummaryBtn) genSummaryBtn.disabled = true;
+        if (aiSummaryTextEl) aiSummaryTextEl.value = '';
         state.report = '';
         renderStats();
         updateStatusBar();
         return;
       }
+      if (genSummaryBtn) genSummaryBtn.disabled = false;
       const cfg = state.lastConfig || readConfigForm();
       const s = state.summary;
       const lines = [];
@@ -1797,6 +1801,9 @@
       state.stratifySelected = [];
       idColumnInput.value = '';
       fileInput.value = '';
+      if (aiSummaryTextEl) aiSummaryTextEl.value = '';
+      if (genSummaryBtn) genSummaryBtn.disabled = true;
+      if (summaryStatusEl) summaryStatusEl.textContent = '';
       renderColumns();
       renderStratifyOptions();
       renderSummary();
@@ -1916,60 +1923,57 @@
       URL.revokeObjectURL(url);
     });
 
-    // Prompt hardwired text and download
-    const SUMMARY_PROMPT = `You are an AML Audit documentation assistant. Using ONLY the information contained in the JSON pasted below (do not assume anything not explicitly present), write a narrative sampling summary suitable for inclusion in an AML audit workpaper.
-
-Goals:
-1) Describe the POPULATION: what it is, total population size (N), source file/sheet if provided, key characteristics, and the distribution of any stratification field(s) (counts and % of N).
-2) Describe the SAMPLE: planned sample size (n), how it was selected, the sample allocation by stratum (counts and % of n), and where applicable note that specific sample IDs are retained for traceability (do not list all IDs unless n ≤ 20).
-3) Explain the RATIONALE for EACH sampling parameter individually, in audit terms and plain English. At minimum address:
-   - sampling_method
-   - confidence_level
-   - margin_of_error
-   - expected_error_rate
-   - planned_sample_size (and how it relates to confidence/margin/expected error and finite population)
-   - stratify_fields (why stratify on these for AML risk/regulatory coverage)
-   - allocation approach implied by the stratum sizes vs allocations (e.g., proportional). Reference proportional_allocation and allocation_difference fields in allocations to explain any deviations from pure proportional allocation.
-   - systematic_random_start (why it helps reduce selection bias)
-   - random_seed (reproducibility/audit trail)
-   - any parameters that are null or not present (simply state what was not specified without referencing the source)
-4) Provide a brief "AML audit context" paragraph tying the sampling design to typical AML objectives (e.g., coverage across jurisdictions, consistency with risk-based testing, defensibility of selection).
-5) Include a short limitations/assumptions section that is explicitly grounded in what is or is not present in the data (e.g., if error definition, time period, or ordering of records is not available, state that it was not specified).
-6) If the "overrides" section indicates any overrides were applied (has_overrides = true), include a dedicated "Overrides" section that describes:
-   - The overall justification provided for overrides
-   - Any parameter overrides (population_size, sample_size, sample_percentage, systematic_step) that were applied, noting the override value and original value where available
-   - Any coverage overrides (strata that had 0 proportional allocation but were adjusted to 1 for coverage)
-   - Any allocation adjustments showing the proportional_allocation vs actual_allocation and the difference
-
-Formatting requirements:
-- Write in complete paragraphs with multiple sentences per paragraph. Each section should have substantive narrative content, not just single sentences.
-- Use a professional audit memo tone throughout.
-- Use clear headings (Population, Sample, Sampling Parameters and Rationale, Overrides (if applicable), AML Audit Context, Limitations).
-- Where helpful, include simple calculations (percentages, proportionality checks). Show numbers; avoid overly technical formulas.
-- Do not cite external standards or regulators unless they are mentioned in the data.
-- Do not fabricate details about AML program, customer types, transaction volumes, or time periods unless explicitly stated.
-- IMPORTANT: When describing what is not available or not specified, use natural phrasing like "was not specified", "was not provided", or "is not available". Do NOT use phrases like "the JSON provided" or "in the JSON" - write as if you are describing the sampling exercise directly, not the data format.`;
-
-    if (promptTextEl) {
-      promptTextEl.value = SUMMARY_PROMPT;
-    }
-    if (copyPromptBtn) {
-      copyPromptBtn.addEventListener('click', async () => {
-        try {
-          await navigator.clipboard.writeText(SUMMARY_PROMPT);
-          if (copyStatusEl) {
-            copyStatusEl.textContent = 'Prompt copied to clipboard!';
-            copyStatusEl.style.color = 'var(--success)';
-            setTimeout(() => { copyStatusEl.textContent = ''; }, 3000);
-          }
-        } catch (err) {
-          console.error('Failed to copy:', err);
-          if (copyStatusEl) {
-            copyStatusEl.textContent = 'Failed to copy. Please select and copy manually.';
-            copyStatusEl.style.color = 'var(--danger)';
-          }
+    // AI Summary generation
+    async function generateAISummary() {
+      if (!state.summary) {
+        if (summaryStatusEl) {
+          summaryStatusEl.textContent = 'Generate a sample first before creating an AI summary.';
+          summaryStatusEl.style.color = 'var(--danger)';
         }
-      });
+        return;
+      }
+      if (genSummaryBtn) genSummaryBtn.disabled = true;
+      if (summaryStatusEl) {
+        summaryStatusEl.textContent = 'Generating AI summary... This may take a moment.';
+        summaryStatusEl.style.color = 'var(--muted)';
+      }
+      if (aiSummaryTextEl) aiSummaryTextEl.value = '';
+
+      try {
+        const resp = await fetch(REPORT_FUNCTION_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ summary: state.summary }),
+        });
+
+        if (!resp.ok) {
+          const errText = await resp.text();
+          throw new Error(errText || `Request failed with status ${resp.status}`);
+        }
+
+        const data = await resp.json();
+        const report = data.report || '';
+        state.report = report;
+
+        if (aiSummaryTextEl) aiSummaryTextEl.value = report;
+        if (summaryStatusEl) {
+          summaryStatusEl.textContent = 'AI summary generated successfully.';
+          summaryStatusEl.style.color = 'var(--success)';
+          setTimeout(() => { summaryStatusEl.textContent = ''; }, 5000);
+        }
+      } catch (err) {
+        console.error('AI summary generation failed:', err);
+        if (summaryStatusEl) {
+          summaryStatusEl.textContent = `Failed to generate summary: ${err.message}`;
+          summaryStatusEl.style.color = 'var(--danger)';
+        }
+      } finally {
+        if (genSummaryBtn && state.summary) genSummaryBtn.disabled = false;
+      }
+    }
+
+    if (genSummaryBtn) {
+      genSummaryBtn.addEventListener('click', generateAISummary);
     }
     if (editRandomizerToggle && randomizerSection) {
       editRandomizerToggle.addEventListener('change', () => {

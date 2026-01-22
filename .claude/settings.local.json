@@ -11,7 +11,8 @@
       "Bash(git push)",
       "Bash(dir /b \"c:\\\\Users\\\\rachura\\\\OneDrive - Crowe LLP\\\\VS Code Programming Projects\\\\CIP CDD Sample Selection\")",
       "mcp__github__get_me",
-      "mcp__github__search_repositories"
+      "mcp__github__search_repositories",
+      "Bash(git log:*)"
     ]
   }
 }
