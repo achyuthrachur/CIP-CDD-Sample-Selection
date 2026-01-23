@@ -693,6 +693,7 @@
           <h3>AI-Generated Summary</h3>
           <div class="buttons tight" style="margin-bottom:8px;">
             <button type="button" id="genSummaryBtn" disabled>Generate AI Summary</button>
+            <button type="button" id="copySummaryBtn" class="secondary" disabled>Copy Summary</button>
           </div>
           <div class="hint" id="summaryStatus"></div>
           <textarea id="aiSummaryText" style="width:100%;min-height:280px;white-space:pre-wrap;" readonly placeholder="Generate a sample first, then click 'Generate AI Summary' to create an AI-written narrative report."></textarea>
@@ -748,6 +749,7 @@
     const summaryBox = document.getElementById('summaryBox');
     const overrideNoteEl = document.getElementById('overrideNote');
     const genSummaryBtn = document.getElementById('genSummaryBtn');
+    const copySummaryBtn = document.getElementById('copySummaryBtn');
     const aiSummaryTextEl = document.getElementById('aiSummaryText');
     const summaryStatusEl = document.getElementById('summaryStatus');
     const editRandomizerToggle = document.getElementById('editRandomizerToggle');
@@ -1672,6 +1674,7 @@
         downloadCsvBtn.disabled = true;
         downloadJsonBtn.disabled = true;
         if (genSummaryBtn) genSummaryBtn.disabled = true;
+        if (copySummaryBtn) copySummaryBtn.disabled = true;
         if (aiSummaryTextEl) aiSummaryTextEl.value = '';
         state.report = '';
         renderStats();
@@ -1803,6 +1806,7 @@
       fileInput.value = '';
       if (aiSummaryTextEl) aiSummaryTextEl.value = '';
       if (genSummaryBtn) genSummaryBtn.disabled = true;
+      if (copySummaryBtn) copySummaryBtn.disabled = true;
       if (summaryStatusEl) summaryStatusEl.textContent = '';
       renderColumns();
       renderStratifyOptions();
@@ -1956,6 +1960,7 @@
         state.report = report;
 
         if (aiSummaryTextEl) aiSummaryTextEl.value = report;
+        if (copySummaryBtn) copySummaryBtn.disabled = false;
         if (summaryStatusEl) {
           summaryStatusEl.textContent = 'AI summary generated successfully.';
           summaryStatusEl.style.color = 'var(--success)';
@@ -1974,6 +1979,32 @@
 
     if (genSummaryBtn) {
       genSummaryBtn.addEventListener('click', generateAISummary);
+    }
+    if (copySummaryBtn) {
+      copySummaryBtn.addEventListener('click', async () => {
+        const text = aiSummaryTextEl ? aiSummaryTextEl.value : '';
+        if (!text) {
+          if (summaryStatusEl) {
+            summaryStatusEl.textContent = 'No summary to copy. Generate one first.';
+            summaryStatusEl.style.color = 'var(--danger)';
+          }
+          return;
+        }
+        try {
+          await navigator.clipboard.writeText(text);
+          if (summaryStatusEl) {
+            summaryStatusEl.textContent = 'Summary copied to clipboard!';
+            summaryStatusEl.style.color = 'var(--success)';
+            setTimeout(() => { summaryStatusEl.textContent = ''; }, 3000);
+          }
+        } catch (err) {
+          console.error('Failed to copy:', err);
+          if (summaryStatusEl) {
+            summaryStatusEl.textContent = 'Failed to copy. Please select and copy manually.';
+            summaryStatusEl.style.color = 'var(--danger)';
+          }
+        }
+      });
     }
     if (editRandomizerToggle && randomizerSection) {
       editRandomizerToggle.addEventListener('change', () => {
