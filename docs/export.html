@@ -24798,12 +24798,14 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       gap: 16px;
       grid-template-columns: minmax(480px, 2fr) minmax(340px, 1fr);
       grid-template-areas:
+        "readme readme"
         "main side"
         "plan side"
         "stats review";
       align-items: stretch;
     }
 
+    .grid-readme { grid-area: readme; }
     .grid-main { grid-area: main; }
     .grid-side { grid-area: side; }
     .grid-stats { grid-area: stats; }
@@ -24814,12 +24816,115 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       .grid {
         grid-template-columns: 1fr;
         grid-template-areas:
+          "readme"
           "main"
           "side"
           "plan"
           "stats"
           "review";
       }
+    }
+
+    /* Read Me Section Styles */
+    .methodology-content {
+      display: none;
+      padding-top: 16px;
+    }
+
+    .methodology-content.expanded {
+      display: block;
+    }
+
+    .methodology-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      padding: 8px 0;
+    }
+
+    .methodology-toggle h2 {
+      margin: 0;
+    }
+
+    .toggle-arrow {
+      transition: transform 0.3s ease;
+      font-size: 1.2rem;
+    }
+
+    .toggle-arrow.expanded {
+      transform: rotate(180deg);
+    }
+
+    .formula-box {
+      background: var(--card-hover);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin: 12px 0;
+      font-family: 'Courier New', monospace;
+      overflow-x: auto;
+    }
+
+    .formula-box code {
+      display: block;
+      white-space: pre-wrap;
+      color: var(--accent-primary);
+    }
+
+    .methodology-section {
+      margin-bottom: 20px;
+    }
+
+    .methodology-section h3 {
+      font-size: 1rem;
+      margin-bottom: 10px;
+      color: var(--accent-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .methodology-section p, .methodology-section li {
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .methodology-section ul {
+      padding-left: 20px;
+      margin: 8px 0;
+    }
+
+    .methodology-section li {
+      margin-bottom: 6px;
+    }
+
+    .justification-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+      font-size: 0.9rem;
+    }
+
+    .justification-table th,
+    .justification-table td {
+      border: 1px solid var(--border-color);
+      padding: 10px 12px;
+      text-align: left;
+    }
+
+    .justification-table th {
+      background: var(--card-hover);
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .justification-table td {
+      color: var(--text-secondary);
+    }
+
+    .justification-table tr:hover td {
+      background: var(--card-hover);
     }
 
     /* Panels */
@@ -25706,6 +25811,105 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
     </div>
 
     <div class="grid">
+      <section class="panel grid-readme tilt-card">
+        <div class="methodology-toggle" onclick="toggleMethodology()">
+          <h2><span class="section-number">&#x1F4D6;</span>Read Me - Methodology & Instructions</h2>
+          <span class="toggle-arrow" id="methodologyArrow">&#x25BC;</span>
+        </div>
+        <div class="methodology-content" id="methodologyContent">
+
+          <div class="methodology-section">
+            <h3>&#x1F4CA; Statistical Sample Size Formula</h3>
+            <p>This tool uses an attribute sampling formula based on the hypergeometric distribution, commonly used in audit sampling. The sample size is calculated as:</p>
+            <div class="formula-box">
+              <code>n = (N * p * (1-p) * Z^2) / ((N-1) * E^2 + p * (1-p) * Z^2)</code>
+            </div>
+            <p>Where:</p>
+            <ul>
+              <li><strong>n</strong> = Required sample size</li>
+              <li><strong>N</strong> = Population size</li>
+              <li><strong>p</strong> = Expected error rate (default: 1%)</li>
+              <li><strong>Z</strong> = Z-score for desired confidence level (e.g., 2.576 for 99%)</li>
+              <li><strong>E</strong> = Tolerable error rate / margin of error (default: 5%)</li>
+            </ul>
+            <p>The formula applies a finite population correction factor when the sample is a significant portion of the population.</p>
+          </div>
+
+          <div class="methodology-section">
+            <h3>&#x2699; How the Tool Operates</h3>
+            <p><strong>Step 1 - Load Data:</strong> Upload an Excel file containing your population data. The tool reads all rows and columns, detecting the available fields for stratification.</p>
+            <p><strong>Step 2 - Configure Sampling:</strong> Select your sampling method and parameters:</p>
+            <ul>
+              <li><strong>Statistical:</strong> Calculates sample size using the formula above based on confidence level, tolerable error, and expected error rate.</li>
+              <li><strong>Simple Random:</strong> Randomly selects records based on a fixed sample size or percentage.</li>
+              <li><strong>Percentage:</strong> Selects a specified percentage of the population.</li>
+              <li><strong>Systematic:</strong> Selects every nth record based on a calculated or specified interval.</li>
+            </ul>
+            <p><strong>Step 3 - Stratification (Optional):</strong> Select one or more fields to stratify by. The tool allocates sample counts proportionally to each stratum based on population distribution.</p>
+            <p><strong>Step 4 - Plan & Adjust:</strong> Review the planned allocation. You can manually adjust stratum allocations if needed (requires justification).</p>
+            <p><strong>Step 5 - Generate & Download:</strong> Execute the sampling and download results as Excel or JSON summary.</p>
+          </div>
+
+          <div class="methodology-section">
+            <h3>&#x26A0; When Justification is Required</h3>
+            <p>Override justification is <strong>required</strong> whenever you deviate from the statistically calculated values. The following table outlines when documentation is needed:</p>
+            <table class="justification-table">
+              <thead>
+                <tr>
+                  <th>Override Type</th>
+                  <th>When It Applies</th>
+                  <th>Justification Required</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Population Size Override</td>
+                  <td>When you manually set a population size different from the loaded data</td>
+                  <td>Yes - explain why the override population is appropriate</td>
+                </tr>
+                <tr>
+                  <td>Sample Size Override</td>
+                  <td>When you specify a fixed sample size instead of using the calculated value</td>
+                  <td>Yes - justify why the override size meets audit objectives</td>
+                </tr>
+                <tr>
+                  <td>Sample Percentage Override</td>
+                  <td>When you specify a percentage rather than using statistical calculation</td>
+                  <td>Yes - document rationale for the selected percentage</td>
+                </tr>
+                <tr>
+                  <td>Systematic Step Override</td>
+                  <td>When you manually set the sampling interval</td>
+                  <td>Yes - explain the basis for the interval selection</td>
+                </tr>
+                <tr>
+                  <td>Stratum Allocation Adjustment</td>
+                  <td>When you modify the proportionally allocated sample counts per stratum</td>
+                  <td>Yes - document why the adjusted allocation is appropriate</td>
+                </tr>
+                <tr>
+                  <td>Coverage Override (+1 to empty strata)</td>
+                  <td>When adding minimum representation to strata that would otherwise have zero samples</td>
+                  <td>Yes - explain the need for coverage of these strata</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="methodology-section">
+            <h3>&#x1F4DD; Best Practices</h3>
+            <ul>
+              <li>Always document your sampling rationale in the override justification field when using any overrides.</li>
+              <li>The JSON summary contains complete audit trail information including all parameters, allocations, and justifications.</li>
+              <li>For reproducibility, note the random seed used (default: 42). The same seed with identical data will produce identical samples.</li>
+              <li>Review the per-stratum allocation before generating to ensure adequate coverage of all relevant categories.</li>
+              <li>When stratifying, consider whether proportional allocation makes sense for your audit objectives, or if certain strata need enhanced coverage.</li>
+            </ul>
+          </div>
+
+        </div>
+      </section>
+
       <section class="panel grid-main tilt-card">
         <h2><span class="section-number">1</span>Load your Excel</h2>
         <div id="dropzone" class="dropzone" tabindex="0">
@@ -25953,6 +26157,35 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
     // Make celebrate function globally available for the sampling success
     window.celebrate = celebrate;
     window.showToast = showToast;
+
+    // Methodology section toggle
+    function toggleMethodology() {
+      const content = document.getElementById('methodologyContent');
+      const arrow = document.getElementById('methodologyArrow');
+      content.classList.toggle('expanded');
+      arrow.classList.toggle('expanded');
+
+      // Save state to localStorage
+      const isExpanded = content.classList.contains('expanded');
+      localStorage.setItem('methodologyExpanded', isExpanded);
+    }
+
+    // Restore methodology section state from localStorage
+    (function initMethodologyState() {
+      const wasExpanded = localStorage.getItem('methodologyExpanded');
+      // Default to collapsed (not expanded) on first visit
+      if (wasExpanded === 'true') {
+        const content = document.getElementById('methodologyContent');
+        const arrow = document.getElementById('methodologyArrow');
+        if (content && arrow) {
+          content.classList.add('expanded');
+          arrow.classList.add('expanded');
+        }
+      }
+    })();
+
+    // Make toggle function globally available
+    window.toggleMethodology = toggleMethodology;
 
     // Konami code easter egg
     const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
