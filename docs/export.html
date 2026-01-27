@@ -24860,16 +24860,90 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       background: var(--card-hover);
       border: 1px solid var(--border-color);
       border-radius: 8px;
-      padding: 16px 20px;
-      margin: 12px 0;
-      font-family: 'Courier New', monospace;
+      padding: 24px 32px;
+      margin: 16px 0;
       overflow-x: auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
-    .formula-box code {
-      display: block;
-      white-space: pre-wrap;
+    .math-equation {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Times New Roman', 'Georgia', serif;
+      font-size: 1.35rem;
+      color: var(--text-primary);
+    }
+
+    .math-var {
+      font-style: italic;
       color: var(--accent-primary);
+    }
+
+    .math-fraction {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      vertical-align: middle;
+    }
+
+    .math-numerator,
+    .math-denominator {
+      padding: 6px 12px;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .math-fraction-line {
+      width: 100%;
+      height: 2px;
+      background: var(--text-primary);
+    }
+
+    .math-sup {
+      font-size: 0.65em;
+      vertical-align: super;
+      line-height: 0;
+    }
+
+    .math-paren {
+      font-size: 1.8em;
+      font-weight: 300;
+      color: var(--text-secondary);
+      line-height: 1;
+    }
+
+    .var-table {
+      width: 100%;
+      margin: 16px 0;
+      border-collapse: collapse;
+    }
+
+    .var-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: top;
+    }
+
+    .var-table td:first-child {
+      width: 100px;
+      font-family: 'Times New Roman', 'Georgia', serif;
+      font-style: italic;
+      font-size: 1.15rem;
+      color: var(--accent-primary);
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .var-table td:last-child {
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .var-table tr:last-child td {
+      border-bottom: none;
     }
 
     .methodology-section {
@@ -25822,17 +25896,44 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
             <h3>&#x1F4CA; Statistical Sample Size Formula</h3>
             <p>This tool uses an attribute sampling formula based on the hypergeometric distribution, commonly used in audit sampling. The sample size is calculated as:</p>
             <div class="formula-box">
-              <code>n = (N * p * (1-p) * Z^2) / ((N-1) * E^2 + p * (1-p) * Z^2)</code>
+              <div class="math-equation">
+                <span class="math-var">n</span>
+                <span>=</span>
+                <div class="math-fraction">
+                  <div class="math-numerator">
+                    <span class="math-var">N</span> &middot; <span class="math-var">p</span> &middot; <span class="math-paren">(</span>1 - <span class="math-var">p</span><span class="math-paren">)</span> &middot; <span class="math-var">Z</span><span class="math-sup">2</span>
+                  </div>
+                  <div class="math-fraction-line"></div>
+                  <div class="math-denominator">
+                    <span class="math-paren">(</span><span class="math-var">N</span> - 1<span class="math-paren">)</span> &middot; <span class="math-var">E</span><span class="math-sup">2</span> + <span class="math-var">p</span> &middot; <span class="math-paren">(</span>1 - <span class="math-var">p</span><span class="math-paren">)</span> &middot; <span class="math-var">Z</span><span class="math-sup">2</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <p>Where:</p>
-            <ul>
-              <li><strong>n</strong> = Required sample size</li>
-              <li><strong>N</strong> = Population size</li>
-              <li><strong>p</strong> = Expected error rate (default: 1%)</li>
-              <li><strong>Z</strong> = Z-score for desired confidence level (e.g., 2.576 for 99%)</li>
-              <li><strong>E</strong> = Tolerable error rate / margin of error (default: 5%)</li>
-            </ul>
-            <p>The formula applies a finite population correction factor when the sample is a significant portion of the population.</p>
+            <p><strong>Variable Definitions:</strong></p>
+            <table class="var-table">
+              <tr>
+                <td>n</td>
+                <td><strong>Required Sample Size</strong> - The calculated number of items to select from the population to achieve the desired statistical precision.</td>
+              </tr>
+              <tr>
+                <td>N</td>
+                <td><strong>Population Size</strong> - The total number of items in the population from which the sample will be drawn.</td>
+              </tr>
+              <tr>
+                <td>p</td>
+                <td><strong>Expected Error Rate</strong> - The anticipated proportion of errors in the population (default: 1% or 0.01). A higher expected error rate results in a larger sample size.</td>
+              </tr>
+              <tr>
+                <td>Z</td>
+                <td><strong>Z-Score (Critical Value)</strong> - The standard normal distribution value corresponding to the desired confidence level. Common values: 1.645 (90%), 1.96 (95%), 2.576 (99%).</td>
+              </tr>
+              <tr>
+                <td>E</td>
+                <td><strong>Tolerable Error Rate (Precision)</strong> - The maximum acceptable margin of error or tolerable deviation rate (default: 5% or 0.05). A smaller tolerable error requires a larger sample.</td>
+              </tr>
+            </table>
+            <p>The formula incorporates a <strong>finite population correction factor</strong> through the (N-1) term in the denominator, which reduces the required sample size when sampling a significant portion of a finite population.</p>
           </div>
 
           <div class="methodology-section">
