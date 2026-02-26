@@ -25162,6 +25162,80 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       flex-wrap: wrap;
     }
 
+    /* Requirements Panel */
+    .requirements-offer,
+    .requirements-applied {
+      padding: 14px 16px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      background: var(--card-hover);
+      margin-bottom: 12px;
+    }
+
+    .requirements-header {
+      margin-bottom: 8px;
+    }
+
+    .requirements-applied {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      flex-wrap: wrap;
+      flex-direction: column;
+    }
+
+    .badge-info {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #003F9F;
+    }
+
+    [data-theme="dark"] .badge-info {
+      background: rgba(0, 63, 159, 0.2);
+      border-color: rgba(0, 63, 159, 0.4);
+      color: #93c5fd;
+    }
+
+    .req-warnings {
+      margin: 0.4rem 0 0;
+      padding-left: 1.2rem;
+      font-size: 0.8rem;
+      color: var(--accent-danger);
+    }
+
+    /* Requirements collapsible section */
+    #requirementsSection {
+      margin-top: 0.5rem;
+    }
+
+    .requirement-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      margin-bottom: 0.4rem;
+    }
+
+    .requirement-row input[type="number"] {
+      width: 5.5rem;
+      flex-shrink: 0;
+    }
+
+    .requirement-row .typeahead {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .warn-hint {
+      color: var(--accent-amber, #F5A800);
+      font-size: 0.78rem;
+    }
+
+    button.small {
+      padding: 4px 8px;
+      font-size: 0.75rem;
+      line-height: 1.4;
+    }
+
     /* Form Elements */
     label {
       display: block;
@@ -26124,6 +26198,16 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
           <input class="typeahead" list="idColumnOptions" id="idColumnInput" name="idColumnInput" placeholder="Type to search columns">
           <datalist id="idColumnOptions"></datalist>
           <div class="checkboxes" style="margin-top:14px;">
+            <label><input type="checkbox" id="requirementsToggle"> &#x1F4CB; Custom requirements</label>
+          </div>
+          <div id="requirementsSection" class="collapsible-section" style="display:none;">
+            <div class="hint">Minimum unique GCIs per column value. Requires ID column to be a GCI field.
+              <span class="warn-hint">High-cardinality columns may be slow.</span>
+            </div>
+            <div id="requirementsList"></div>
+            <button type="button" id="addRequirementBtn" class="secondary small">+ Add requirement</button>
+          </div>
+          <div class="checkboxes" style="margin-top:14px;">
             <label><input type="checkbox" id="editRandomizerToggle"> &#x1F3B2; Edit Randomizer</label>
           </div>
           <div id="randomizerSection" class="row" style="display:none;">
@@ -26171,6 +26255,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
           </div>
         </div>
         <div id="expansionPanel" style="display:none;"></div>
+        <div id="requirementsPanel" style="display:none;"></div>
         <div class="summary" id="summaryBox">Load data and run sampling to see results.</div>
         <div id="overrideNote" class="hint"></div>
         <div style="margin-top:14px;">
@@ -26408,6 +26493,9 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       idExpansionBaseSampleSize: null,
       idExpansionCandidates: 0,
       idExpansionTotalRows: 0,
+      requirements: [],
+      requirementsApplied: false,
+      requirementsMeta: null,
     };
 
     const dropzone = document.getElementById('dropzone');
@@ -26513,11 +26601,48 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       renderRecentUploads();
     }
 
+    function injectDemoMultiJurisdictionGcis(population, columns) {
+      const gciCol = columns.find(c => /gci/i.test(c));
+      const jurisCol = columns.find(c => /juris|jurisdiction|country|country_code|location|region/i.test(c));
+      if (!gciCol || !jurisCol) return population; // no-op if columns not present
+
+      // Collect first 3 distinct non-blank GCI values
+      const seen = new Set();
+      const targetGcis = [];
+      for (const row of population) {
+        const v = row[gciCol];
+        if (v != null && v !== '' && !seen.has(v)) {
+          seen.add(v);
+          targetGcis.push(v);
+          if (targetGcis.length >= 3) break;
+        }
+      }
+
+      const extraJurisdictions = ['UK', 'DE', 'SG', 'CA', 'FR'];
+      const acctCol = columns.find(c => /account|acct/i.test(c));
+      const extraRows = [];
+
+      targetGcis.forEach((gci, idx) => {
+        const template = population.find(r => r[gciCol] === gci);
+        if (!template) return;
+        const clone = { ...template };
+        const origJuris = String(template[jurisCol] ?? '');
+        const candidates = extraJurisdictions.filter(j => j !== origJuris);
+        clone[jurisCol] = candidates[idx % candidates.length];
+        if (acctCol && clone[acctCol] != null) {
+          clone[acctCol] = String(clone[acctCol]) + '-JX';
+        }
+        extraRows.push(clone);
+      });
+
+      return [...population, ...extraRows];
+    }
+
     function loadInlineDemo(label = 'Demo (inline)') {
       state.fileName = label;
       state.sheetName = 'Demo';
-      state.population = DEMO_INLINE;
-      state.columns = Object.keys(DEMO_INLINE[0]);
+      state.population = injectDemoMultiJurisdictionGcis(DEMO_INLINE, Object.keys(DEMO_INLINE[0]));
+      state.columns = Object.keys(state.population[0]);
       state.sample = [];
       state.summary = null;
       state.plan = null;
@@ -26615,6 +26740,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
         stratifyOptionsList.innerHTML = state.columns.map(col => `<option value="${col}"></option>`).join('');
       }
       idColumnOptions.innerHTML = `<option value=""></option>` + state.columns.map(col => `<option value="${col}">${col}</option>`).join('');
+      if (typeof updateReqColumnDatalist === 'function') updateReqColumnDatalist();
       renderStratifyChips();
     }
 
@@ -26737,7 +26863,14 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
           state.plan = null;
           state.fileMeta = { name: 'synthetic_onboarding_data.xlsx', size: buf.byteLength, lastModified: null };
           processWorkbook(buf, 'Demo file (embedded synthetic_onboarding_data.xlsx)', state.fileMeta);
-          setStatus('Demo data loaded from embedded workbook.', 'success');
+          const augmented = injectDemoMultiJurisdictionGcis(state.population, state.columns);
+          if (augmented.length > state.population.length) {
+            state.population = augmented;
+            renderColumns(); renderStratifyOptions(); renderPlan(); renderSummary(); renderStats();
+            setStatus(`Demo data loaded (${state.population.length} rows, augmented with multi-jurisdiction GCIs for testing).`, 'success');
+          } else {
+            setStatus('Demo data loaded from embedded workbook.', 'success');
+          }
         } catch (err) {
           console.error(err);
           setStatus('Could not load embedded demo file; using inline demo.', 'danger');
@@ -27041,6 +27174,8 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
         samplePercentage: cfg.samplePercentage,
         systematicStep: cfg.systematicStep,
         stratifyFields: cfg.stratifyFields,
+        idColumn: cfg.idColumn || null,
+        requirements: cfg.requirements || [],
       });
     }
 
@@ -27338,6 +27473,18 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
             expanded_final_sample_size: sample.length,
             unique_ids_expanded: expansionMeta.uniqueIdCount,
           } : { applied: false },
+          requirements: expansionMeta?.requirementsApplied ? {
+            rules: (expansionMeta.requirements || []).map(r => ({
+              field: r.field,
+              min_unique_gcis: r.minUniqueGcis,
+            })),
+            base_selected_gci_count: expansionMeta.requirementsMeta?.baseGciCount,
+            added_gci_count: expansionMeta.requirementsMeta?.addedGciCount,
+            final_selected_gci_count: expansionMeta.requirementsMeta?.finalGciCount,
+            base_sample_rows: expansionMeta.requirementsMeta?.baseSampleRows,
+            final_sample_rows: expansionMeta.requirementsMeta?.finalSampleRows,
+            warnings: expansionMeta.requirementsMeta?.warnings || [],
+          } : { applied: false },
         },
 
         // Consolidated Overrides Section
@@ -27480,6 +27627,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
         systematicRandomStart: randomStart,
         idColumn,
         overrideJustification,
+        requirements: state.requirements || [],
       };
     }
 
@@ -27489,7 +27637,8 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
         (cfg.samplePercentage != null) ||
         (cfg.systematicStep != null) ||
         (populationOverrideInput && populationOverrideInput.value) ||
-        state.idExpansionApplied
+        state.idExpansionApplied ||
+        state.requirementsApplied
       );
     }
 
@@ -27520,6 +27669,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
         }
       }
       if (state.idExpansionApplied) return true;
+      if (state.requirementsApplied) return true;
       return false;
     }
 
@@ -27578,6 +27728,56 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       }
     }
 
+    function renderRequirementsPanel(cfg) {
+      const panel = document.getElementById('requirementsPanel');
+      if (!panel) return;
+      const reqs = cfg.requirements || [];
+      if (!reqs.length || !cfg.idColumn || !/gci/i.test(cfg.idColumn)) {
+        panel.style.display = 'none';
+        return;
+      }
+      if (!state.requirementsApplied) {
+        panel.style.display = 'block';
+        panel.innerHTML = `
+          <div class="requirements-offer">
+            <div class="requirements-header">
+              <span class="badge badge-info">Requirements pending</span>
+            </div>
+            <p class="hint">
+              <strong>${reqs.length}</strong> requirement rule(s) defined.
+              Applying will add GCIs until minimums are met (or cap with warnings if infeasible).
+              Current sample: <strong>${state.sample.length}</strong> rows.
+            </p>
+            <div class="buttons tight">
+              <button type="button" id="applyRequirementsBtn">Apply requirements</button>
+              <button type="button" class="secondary" id="dismissRequirementsBtn">Dismiss</button>
+            </div>
+          </div>`;
+        document.getElementById('applyRequirementsBtn')
+          .addEventListener('click', () => applyRequirements(cfg));
+        document.getElementById('dismissRequirementsBtn')
+          .addEventListener('click', () => { panel.style.display = 'none'; });
+      } else {
+        const m = state.requirementsMeta || {};
+        const warnHtml = m.warnings && m.warnings.length
+          ? `<ul class="req-warnings">${m.warnings.map(w => `<li>${w}</li>`).join('')}</ul>`
+          : '';
+        panel.style.display = 'block';
+        panel.innerHTML = `
+          <div class="requirements-applied">
+            <span class="badge ${m.warnings && m.warnings.length ? 'badge-warn' : 'badge-ok'}">
+              Requirements applied${m.warnings && m.warnings.length ? ' (with warnings)' : ''}
+            </span>
+            <span class="hint">
+              Added ${m.addedGciCount} GCI(s) (${m.baseGciCount} &rarr; ${m.finalGciCount}).
+              Sample: ${m.baseSampleRows} &rarr; ${m.finalSampleRows} rows.
+              Override justification required below.
+            </span>
+            ${warnHtml}
+          </div>`;
+      }
+    }
+
     function applyExpansion(cfg) {
       if (!cfg.idColumn || !state.population.length) return;
 
@@ -27604,11 +27804,135 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       renderSummary();
       if (state.plan) renderPlan();
       renderExpansionPanel(cfg);
+      renderRequirementsPanel(cfg);
       updateJustificationVisibility();
       setStatus(
         `Expansion applied: ${state.idExpansionBaseSampleSize} → ${expandedSample.length} rows (all rows for ${state.idExpansionCandidates} ID(s) in "${cfg.idColumn}").`,
         'success'
       );
+    }
+
+    function applyRequirements(cfg) {
+      if (!cfg.idColumn || !cfg.requirements || !cfg.requirements.length) return;
+      const gciCol = cfg.idColumn;
+
+      // Build gciToRows map
+      const gciToRows = new Map();
+      for (const row of state.population) {
+        const gci = row[gciCol];
+        if (gci == null || gci === '') continue;
+        if (!gciToRows.has(gci)) gciToRows.set(gci, []);
+        gciToRows.get(gci).push(row);
+      }
+
+      // Derive selectedGcis from current sample
+      let selectedGcis = new Set(
+        state.sample.map(r => r[gciCol]).filter(v => v != null && v !== '')
+      );
+      const baseGciCount = selectedGcis.size;
+      const baseSampleRows = state.sample.length;
+
+      // Build valueToAllGcis for each requirement field
+      const valueToAllGcis = {};
+      for (const req of cfg.requirements) {
+        const map = new Map();
+        for (const row of state.population) {
+          const gci = row[gciCol];
+          if (gci == null || gci === '') continue;
+          const val = String(row[req.field] != null ? row[req.field] : '');
+          if (!map.has(val)) map.set(val, new Set());
+          map.get(val).add(gci);
+        }
+        valueToAllGcis[req.field] = map;
+      }
+
+      // Iterative GCI addition (highest deficit first, seeded RNG)
+      const rng = rngFactory((cfg.seed || 42) + 1000);
+      const MAX_ITER = 50000;
+      let iter = 0;
+      let changed = true;
+
+      while (changed && iter < MAX_ITER) {
+        changed = false;
+        iter++;
+        let bestDeficit = 0, bestEligible = null;
+
+        for (const req of cfg.requirements) {
+          const map = valueToAllGcis[req.field];
+          for (const [, allGcis] of map.entries()) {
+            const currentCount = [...allGcis].filter(g => selectedGcis.has(g)).length;
+            const deficit = Math.max(0, req.minUniqueGcis - currentCount);
+            if (deficit > bestDeficit) {
+              const eligible = [...allGcis].filter(g => !selectedGcis.has(g));
+              if (eligible.length > 0) {
+                bestDeficit = deficit;
+                bestEligible = eligible;
+              }
+            }
+          }
+        }
+
+        if (bestDeficit > 0 && bestEligible) {
+          selectedGcis.add(bestEligible[Math.floor(rng() * bestEligible.length)]);
+          changed = true;
+        }
+      }
+
+      // Collect infeasibility warnings
+      const warnings = [];
+      for (const req of cfg.requirements) {
+        const map = valueToAllGcis[req.field];
+        for (const [val, allGcis] of map.entries()) {
+          const achieved = [...allGcis].filter(g => selectedGcis.has(g)).length;
+          if (achieved < req.minUniqueGcis) {
+            warnings.push(`"${req.field}" = "${val}": required ${req.minUniqueGcis}, achieved ${achieved} (max possible)`);
+          }
+        }
+      }
+
+      // Final expand: preserve population order
+      const finalRows = state.population.filter(r => {
+        const gci = r[gciCol];
+        return gci != null && gci !== '' && selectedGcis.has(gci);
+      });
+
+      state.sample = finalRows;
+      state.requirementsApplied = true;
+      state.requirementsMeta = {
+        baseGciCount,
+        finalGciCount: selectedGcis.size,
+        addedGciCount: selectedGcis.size - baseGciCount,
+        baseSampleRows,
+        finalSampleRows: finalRows.length,
+        warnings,
+      };
+
+      const desiredSize = state.plan
+        ? state.plan.allocations.reduce((s, a) => s + a.sample_count, 0)
+        : baseSampleRows;
+
+      state.summary = buildSummary(
+        state.population, state.sample, [], cfg, desiredSize, state.plan,
+        {
+          idExpansionApplied: state.idExpansionApplied,
+          baseSampleSize: state.idExpansionBaseSampleSize || baseSampleRows,
+          uniqueIdCount: state.idExpansionCandidates,
+          requirementsApplied: true,
+          requirements: cfg.requirements,
+          requirementsMeta: state.requirementsMeta,
+        }
+      );
+
+      renderStats();
+      renderSummary();
+      if (state.plan) renderPlan();
+      renderRequirementsPanel(cfg);
+      updateJustificationVisibility();
+
+      const msg = warnings.length
+        ? `Requirements applied with ${warnings.length} infeasible value(s). See summary for details.`
+        : `Requirements applied: ${state.requirementsMeta.addedGciCount} GCI(s) added, ${finalRows.length} total rows.`;
+      setStatus(msg, warnings.length ? 'danger' : 'success');
     }
 
     function autosizeTextarea(el) {
@@ -27633,6 +27957,17 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       state.idExpansionBaseSampleSize = null;
       state.idExpansionCandidates = 0;
       state.idExpansionTotalRows = 0;
+      state.requirements = [];
+      state.requirementsApplied = false;
+      state.requirementsMeta = null;
+      const requirementsListEl = document.getElementById('requirementsList');
+      if (requirementsListEl) requirementsListEl.innerHTML = '';
+      const requirementsToggleEl = document.getElementById('requirementsToggle');
+      if (requirementsToggleEl) requirementsToggleEl.checked = false;
+      const requirementsSectionEl = document.getElementById('requirementsSection');
+      if (requirementsSectionEl) requirementsSectionEl.style.display = 'none';
+      const requirementsPanelEl = document.getElementById('requirementsPanel');
+      if (requirementsPanelEl) requirementsPanelEl.style.display = 'none';
       idColumnInput.value = '';
       fileInput.value = '';
       renderColumns();
@@ -27679,6 +28014,9 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
         state.idExpansionBaseSampleSize = null;
         state.idExpansionCandidates = 0;
         state.idExpansionTotalRows = 0;
+        // Reset requirements state on each new generate
+        state.requirementsApplied = false;
+        state.requirementsMeta = null;
         const expansionPanel = document.getElementById('expansionPanel');
         if (expansionPanel) expansionPanel.style.display = 'none';
         if (!state.plan || state.plan.populationSize !== state.population.length || JSON.stringify(state.plan.stratifyFields || []) !== fieldsKey || state.plan.signature !== configSignature(cfg)) {
@@ -27713,6 +28051,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
         }
         renderSummary();
         renderExpansionPanel(cfg);
+        renderRequirementsPanel(cfg);
         setStatus(`Sample created: ${sample.length} records.`, 'success');
         // Celebrate successful sampling with confetti
         if (typeof celebrate === 'function') celebrate();
@@ -27969,6 +28308,73 @@ Formatting requirements:
     if (editRandomizerToggle && randomizerSection) {
       editRandomizerToggle.addEventListener('change', () => {
         randomizerSection.style.display = editRandomizerToggle.checked ? 'grid' : 'none';
+      });
+    }
+
+    function syncRequirementsState() {
+      state.requirements = [...document.querySelectorAll('#requirementsList .requirement-row')]
+        .map(row => ({
+          field: row.querySelector('.req-col-input').value.trim(),
+          minUniqueGcis: parseInt(row.querySelector('input[type="number"]').value, 10) || 0,
+        }))
+        .filter(r => r.field && state.columns.includes(r.field) && r.minUniqueGcis > 0);
+    }
+
+    function makeRequirementRow() {
+      const row = document.createElement('div');
+      row.className = 'requirement-row';
+      const optionsHtml = state.columns.map(c => {
+        const escaped = c.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        return `<option value="${escaped}"></option>`;
+      }).join('');
+      row.innerHTML = `
+        <input class="typeahead req-col-input" list="reqColumnOptions" placeholder="Column" />
+        <input type="number" min="1" placeholder="Min GCIs" />
+        <button type="button" class="remove-req secondary small">&#x2715;</button>`;
+      // Re-use existing reqColumnOptions datalist (shared, populated below)
+      row.querySelector('.req-col-input').setAttribute('list', 'reqColumnOptions');
+      row.querySelector('.remove-req').addEventListener('click', () => {
+        row.remove();
+        syncRequirementsState();
+      });
+      row.querySelector('input[type="number"]').addEventListener('input', syncRequirementsState);
+      row.querySelector('.req-col-input').addEventListener('input', syncRequirementsState);
+      return row;
+    }
+
+    // Ensure reqColumnOptions datalist exists
+    (function ensureReqColumnDatalist() {
+      if (!document.getElementById('reqColumnOptions')) {
+        const dl = document.createElement('datalist');
+        dl.id = 'reqColumnOptions';
+        document.body.appendChild(dl);
+      }
+    })();
+
+    function updateReqColumnDatalist() {
+      const dl = document.getElementById('reqColumnOptions');
+      if (!dl) return;
+      dl.innerHTML = state.columns.map(c => {
+        const escaped = c.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        return `<option value="${escaped}"></option>`;
+      }).join('');
+    }
+
+    const requirementsToggleEl = document.getElementById('requirementsToggle');
+    const requirementsSectionEl = document.getElementById('requirementsSection');
+    const addRequirementBtnEl = document.getElementById('addRequirementBtn');
+
+    if (requirementsToggleEl && requirementsSectionEl) {
+      requirementsToggleEl.addEventListener('change', () => {
+        requirementsSectionEl.style.display = requirementsToggleEl.checked ? 'block' : 'none';
+      });
+    }
+
+    if (addRequirementBtnEl) {
+      addRequirementBtnEl.addEventListener('click', () => {
+        updateReqColumnDatalist();
+        const list = document.getElementById('requirementsList');
+        if (list) list.appendChild(makeRequirementRow());
       });
     }
 
