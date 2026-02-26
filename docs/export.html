@@ -24601,9 +24601,11 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       --text-primary: #1e293b;
       --text-secondary: #334155;
       --text-muted: #64748b;
-      --accent-primary: #1e40af;
-      --accent-secondary: #2563eb;
-      --accent-tertiary: #3b82f6;
+      --accent-primary: #011E41;
+      --accent-secondary: #002E62;
+      --accent-tertiary: #003F9F;
+      --accent-amber: #F5A800;
+      --accent-amber-bright: #FFD231;
       --accent-success: #15803d;
       --accent-warning: #b45309;
       --accent-danger: #b91c1c;
@@ -24612,26 +24614,29 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       --card-hover: #f8fafc;
       --scrollbar-track: #f1f5f9;
       --scrollbar-thumb: #cbd5e1;
+      --radius: 0.5rem;
     }
 
     /* Dark Theme */
     [data-theme="dark"] {
-      --bg-primary: #0f172a;
-      --bg-secondary: #1e293b;
-      --glass-bg: #1e293b;
-      --glass-border: #334155;
+      --bg-primary: #0a1628;
+      --bg-secondary: #0f2042;
+      --glass-bg: #0f2042;
+      --glass-border: #1a3a6e;
       --glass-shadow: 0 1px 3px rgba(0,0,0,0.3);
       --text-primary: #f1f5f9;
       --text-secondary: #e2e8f0;
       --text-muted: #94a3b8;
-      --accent-primary: #3b82f6;
-      --accent-secondary: #60a5fa;
-      --accent-tertiary: #93c5fd;
-      --border-color: #334155;
-      --input-bg: #1e293b;
-      --card-hover: #334155;
-      --scrollbar-track: #1e293b;
-      --scrollbar-thumb: #475569;
+      --accent-primary: #003F9F;
+      --accent-secondary: #F5A800;
+      --accent-tertiary: #FFD231;
+      --accent-amber: #F5A800;
+      --accent-amber-bright: #FFD231;
+      --border-color: #1a3a6e;
+      --input-bg: #0f2042;
+      --card-hover: #132a5a;
+      --scrollbar-track: #0f2042;
+      --scrollbar-thumb: #2a4a7f;
     }
 
     /* Global Reset & Base */
@@ -24646,7 +24651,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
     }
 
     body {
-      font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-family: 'Helvetica Now', 'Helvetica Now Text', 'Helvetica Neue', Helvetica, Arial, sans-serif;
       background: var(--bg-primary);
       color: var(--text-primary);
       min-height: 100vh;
@@ -25062,7 +25067,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
     .dropzone:hover,
     .dropzone.dragging {
       border-color: var(--accent-primary);
-      background: rgba(30,64,175,0.04);
+      background: rgba(1,30,65,0.04);
     }
 
     [data-theme="dark"] .dropzone:hover,
@@ -25136,13 +25141,36 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       border-color: rgba(239, 68, 68, 0.3);
     }
 
+    /* Expansion Panel */
+    .expansion-offer,
+    .expansion-applied {
+      padding: 14px 16px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      background: var(--card-hover);
+      margin-bottom: 12px;
+    }
+
+    .expansion-header {
+      margin-bottom: 8px;
+    }
+
+    .expansion-applied {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
     /* Form Elements */
     label {
       display: block;
-      font-weight: 500;
+      font-weight: 600;
       margin: 14px 0 6px;
-      font-size: 0.875rem;
-      color: var(--text-primary);
+      font-size: 0.6875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
     }
 
     input[type="number"],
@@ -25165,13 +25193,13 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
     textarea:focus {
       outline: none;
       border-color: var(--accent-primary);
-      box-shadow: 0 0 0 3px rgba(30,64,175,0.1);
+      box-shadow: 0 0 0 2px rgba(1,30,65,0.12);
     }
 
     [data-theme="dark"] input:focus,
     [data-theme="dark"] select:focus,
     [data-theme="dark"] textarea:focus {
-      box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
+      box-shadow: 0 0 0 2px rgba(0,63,159,0.25);
     }
 
     input::placeholder,
@@ -25227,6 +25255,8 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       transition: border-color 0.15s ease;
       font-weight: 500;
       font-size: 0.875rem;
+      text-transform: none;
+      letter-spacing: normal;
     }
 
     .checkboxes label:hover {
@@ -26140,6 +26170,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
             <div class="hint">Sample and JSON update each time you generate.</div>
           </div>
         </div>
+        <div id="expansionPanel" style="display:none;"></div>
         <div class="summary" id="summaryBox">Load data and run sampling to see results.</div>
         <div id="overrideNote" class="hint"></div>
         <div style="margin-top:14px;">
@@ -26372,6 +26403,11 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       fileMeta: null,
       overrideJustification: '',
       lastConfig: null,
+      idExpansionAvailable: false,
+      idExpansionApplied: false,
+      idExpansionBaseSampleSize: null,
+      idExpansionCandidates: 0,
+      idExpansionTotalRows: 0,
     };
 
     const dropzone = document.getElementById('dropzone');
@@ -27195,7 +27231,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       return { sample: samples, allocations: allocationSummary };
     }
 
-    function buildSummary(population, sample, allocations, cfg, plannedSize, plan) {
+    function buildSummary(population, sample, allocations, cfg, plannedSize, plan, expansionMeta = {}) {
       const coverageOverrides = plan && plan.coverageOverrides ? plan.coverageOverrides : [];
       const planAllocations = plan && plan.allocations ? plan.allocations : [];
 
@@ -27295,6 +27331,13 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
           final_sample_size: sample.length,
           sample_distribution: distribution(sample, cfg.stratifyFields),
           allocations_by_stratum: allocationsWithDiff,
+          id_expansion: expansionMeta?.idExpansionApplied ? {
+            applied: true,
+            id_column: cfg.idColumn,
+            base_sample_size: expansionMeta.baseSampleSize,
+            expanded_final_sample_size: sample.length,
+            unique_ids_expanded: expansionMeta.uniqueIdCount,
+          } : { applied: false },
         },
 
         // Consolidated Overrides Section
@@ -27445,7 +27488,8 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
         (cfg.sampleSize != null) ||
         (cfg.samplePercentage != null) ||
         (cfg.systematicStep != null) ||
-        (populationOverrideInput && populationOverrideInput.value)
+        (populationOverrideInput && populationOverrideInput.value) ||
+        state.idExpansionApplied
       );
     }
 
@@ -27475,6 +27519,7 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
           }
         }
       }
+      if (state.idExpansionApplied) return true;
       return false;
     }
 
@@ -27486,6 +27531,84 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       if (!show && overrideNoteEl) {
         overrideNoteEl.textContent = '';
       }
+    }
+
+    function renderExpansionPanel(cfg) {
+      const panel = document.getElementById('expansionPanel');
+      if (!panel) return;
+
+      if (state.idExpansionAvailable && !state.idExpansionApplied) {
+        panel.style.display = 'block';
+        panel.innerHTML = `
+          <div class="expansion-offer">
+            <div class="expansion-header">
+              <span class="badge badge-warn">Multi-row IDs detected</span>
+            </div>
+            <p class="hint">
+              <strong>${state.idExpansionCandidates}</strong> sampled ID value(s) in
+              <strong>${cfg.idColumn}</strong> appear on multiple rows in the population.
+              Expanding the sample will include all matching rows
+              (<strong>${state.idExpansionTotalRows}</strong> total rows, up from
+              <strong>${state.idExpansionBaseSampleSize}</strong>).
+            </p>
+            <div class="buttons tight">
+              <button type="button" id="expandSampleBtn">Expand to all rows</button>
+              <button type="button" class="secondary" id="dismissExpansionBtn">Dismiss</button>
+            </div>
+          </div>
+        `;
+        document.getElementById('expandSampleBtn').addEventListener('click', () => applyExpansion(cfg));
+        document.getElementById('dismissExpansionBtn').addEventListener('click', () => {
+          panel.style.display = 'none';
+        });
+      } else if (state.idExpansionApplied) {
+        panel.style.display = 'block';
+        panel.innerHTML = `
+          <div class="expansion-applied">
+            <span class="badge badge-ok">Expansion applied</span>
+            <span class="hint">
+              Sample expanded from ${state.idExpansionBaseSampleSize} base rows to
+              ${state.sample.length} rows (all rows for ${state.idExpansionCandidates} multi-row ID(s)).
+              Override justification required below.
+            </span>
+          </div>
+        `;
+      } else {
+        panel.style.display = 'none';
+      }
+    }
+
+    function applyExpansion(cfg) {
+      if (!cfg.idColumn || !state.population.length) return;
+
+      const sampledIds = new Set(
+        state.sample.map(r => r[cfg.idColumn]).filter(v => v != null && v !== '')
+      );
+      const expandedSample = state.population.filter(r => sampledIds.has(r[cfg.idColumn]));
+
+      state.idExpansionApplied = true;
+      state.sample = expandedSample;
+
+      const desiredSize = state.summary?.sample_selection_method?.original_calculated_sample_size
+        ?? state.idExpansionBaseSampleSize;
+      state.summary = buildSummary(
+        state.population, expandedSample, [], cfg, desiredSize, state.plan,
+        {
+          idExpansionApplied: true,
+          baseSampleSize: state.idExpansionBaseSampleSize,
+          uniqueIdCount: state.idExpansionCandidates,
+        }
+      );
+
+      renderStats();
+      renderSummary();
+      if (state.plan) renderPlan();
+      renderExpansionPanel(cfg);
+      updateJustificationVisibility();
+      setStatus(
+        `Expansion applied: ${state.idExpansionBaseSampleSize} → ${expandedSample.length} rows (all rows for ${state.idExpansionCandidates} ID(s) in "${cfg.idColumn}").`,
+        'success'
+      );
     }
 
     function autosizeTextarea(el) {
@@ -27505,6 +27628,11 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
       state.report = '';
       state.fileMeta = null;
       state.stratifySelected = [];
+      state.idExpansionAvailable = false;
+      state.idExpansionApplied = false;
+      state.idExpansionBaseSampleSize = null;
+      state.idExpansionCandidates = 0;
+      state.idExpansionTotalRows = 0;
       idColumnInput.value = '';
       fileInput.value = '';
       renderColumns();
@@ -27545,6 +27673,14 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
         const cfg = readConfigForm();
         const fieldsKey = JSON.stringify(cfg.stratifyFields || []);
         state.lastConfig = cfg;
+        // Reset expansion state for new sample run
+        state.idExpansionAvailable = false;
+        state.idExpansionApplied = false;
+        state.idExpansionBaseSampleSize = null;
+        state.idExpansionCandidates = 0;
+        state.idExpansionTotalRows = 0;
+        const expansionPanel = document.getElementById('expansionPanel');
+        if (expansionPanel) expansionPanel.style.display = 'none';
         if (!state.plan || state.plan.populationSize !== state.population.length || JSON.stringify(state.plan.stratifyFields || []) !== fieldsKey || state.plan.signature !== configSignature(cfg)) {
           const plan = computePlan(state.population, cfg);
           plan.populationSize = state.population.length;
@@ -27554,7 +27690,29 @@ if(typeof window !== 'undefined' && !window.XLSX) try { window.XLSX = XLSX; } ca
         const { sample, summary } = sampleData(state.population, cfg, state.plan);
         state.sample = sample;
         state.summary = summary;
+        // Post-sampling ID expansion detection
+        if (cfg.idColumn) {
+          const sampledIds = new Set(
+            state.sample.map(r => r[cfg.idColumn]).filter(v => v != null && v !== '')
+          );
+          let candidateCount = 0;
+          let totalExpandedRows = 0;
+          sampledIds.forEach(id => {
+            const rows = state.population.filter(r => r[cfg.idColumn] === id);
+            if (rows.length > 1) {
+              candidateCount++;
+            }
+            totalExpandedRows += rows.length;
+          });
+          if (candidateCount > 0) {
+            state.idExpansionAvailable = true;
+            state.idExpansionCandidates = candidateCount;
+            state.idExpansionTotalRows = totalExpandedRows;
+            state.idExpansionBaseSampleSize = state.sample.length;
+          }
+        }
         renderSummary();
+        renderExpansionPanel(cfg);
         setStatus(`Sample created: ${sample.length} records.`, 'success');
         // Celebrate successful sampling with confetti
         if (typeof celebrate === 'function') celebrate();
